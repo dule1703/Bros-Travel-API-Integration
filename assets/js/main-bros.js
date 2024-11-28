@@ -20,31 +20,36 @@ createApp({
     
     // Function to handle the destination search
     const searchDestinations = () => {
-    if (searchQuery.value.length >= 2) {
-            console.log("Search query", searchQuery.value);
-            const filteredResults = destinations.filter((destination) => {
-            if (typeof destination === "string") {
-                const searchString = destination.toLowerCase();
-                return searchString.includes(searchQuery.value.toLowerCase());
-            }
-            return false;
-            });
-
-        // Remove duplicates
-            const uniqueResults = Array.from(new Set(filteredResults));
-
-            console.log("Filtered results:", uniqueResults);
-            searchResults.value = uniqueResults;
-
-        
-            isListVisible.value = uniqueResults.length > 0;
+      if (searchQuery.value.length >= 2) {
+        console.log("Search query:", searchQuery.value);       
+    
+        const filteredResults = destinations.filter((destination) => {
+          if (typeof destination === "string") {
+            const searchString = destination.toLowerCase();
+            return searchString.includes(searchQuery.value.toLowerCase());
+          }
+          return false;
+        });
+    
+        console.log("Filtered results:", filteredResults);
+    
+        if (Array.isArray(searchResults)) {
+          searchResults.splice(0, searchResults.length, ...filteredResults);
         } else {
-            searchResults.value = [];
-            isListVisible.value = false;
+          searchResults.value = filteredResults;
         }
+    
+        isListVisible.value = filteredResults.length > 0;
+      } else {
+        if (Array.isArray(searchResults)) {
+          searchResults.splice(0, searchResults.length);
+        } else {
+          searchResults.value = [];
+        }
+        isListVisible.value = false;
+      }
     };
-
-
+    
     // Function to load destinations from the server when the page loads
     const loadDestinations = async () => {
       try {
@@ -54,55 +59,31 @@ createApp({
             "Content-Type": "application/x-www-form-urlencoded",
           },
           body: new URLSearchParams({
-            action: "get_bros_travel_recommendations",
+            action: "get_bros_travel_all_destinations",
             nonce: brosTravelData.nonce,
           }),
         });
-
+    
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
-
+    
         const text = await response.text();
-
+    
         if (text.trim() === "") {
           throw new Error("Empty response body");
         }
-
+    
         const data = JSON.parse(text);
         console.log("Parsed data:", data);
-
-        if (
-          data.success &&
-          data.data &&
-          data.data.result &&
-          data.data.result.locations
-        ) {
-          const locationsArray = Object.values(data.data.result.locations);
-
-          locationsArray.forEach((location) => {
-            if (location) {
-              // Prepare the destination strings outside the loop
-              const destinationStrings = [
-                `${location.region} / ${location.country}`,
-                `${location.subregion} / ${location.region} / ${location.country}`,
-                `${location.name} / ${location.subregion} / ${location.region} / ${location.country}`,
-              ];
-
-              // Push all destination strings into destinations array
-              destinations.push(...destinationStrings);
-
-              // Iterate over properties and add destination string based on location match
-              data.data.result.properties.forEach((property) => {
-                if (property.locationid === location.locationid) {
-                  const destinationString4 = `${property.name} / ${location.name} / ${location.subregion} / ${location.region} / ${location.country}`;
-                  destinations.push(destinationString4);
-                }
-              });
-            }
-          });
-
-          console.log("Destinations:", destinations);
+    
+        if (data.success && data.data) {
+          const locationsArray = Object.values(data.data);
+    
+          // Directly modify the reactive array
+          destinations.splice(0, destinations.length, ...locationsArray);
+    
+          
         } else {
           console.error("Error: locations not found or not valid.");
         }
@@ -110,6 +91,7 @@ createApp({
         console.error("Error while loading destinations:", error);
       }
     };
+    
 
     const loadLocationsProperties = async () => {
       isLoading.value = true;
@@ -123,7 +105,7 @@ createApp({
           body: new URLSearchParams({
             action: "filter_properties_and_locations",
             nonce: brosTravelData.nonce,
-            search_string: getTrimmedDestination(searchQuery.value),
+            search_string: getTrimmedDestination(searchQuery.value),            
           }),
         });
 

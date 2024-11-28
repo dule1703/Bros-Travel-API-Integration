@@ -17,9 +17,7 @@ class Bros_Travel_API_AJAX {
     public function __construct() {
         // Initialize the Bros_Travel_API_Login class
         $this->login = new Bros_Travel_API_Login();
-
-        // Initialize the Bros_Travel_API_Recommendations class
-        $this->recommendations = new Bros_Travel_API_Recommendations();
+        
 
         // Initialize the Bros_Travel_API_Properties class
         $this->properties = new Bros_Travel_API_Properties();
@@ -27,18 +25,12 @@ class Bros_Travel_API_AJAX {
         // Initialize the Bros_Travel_API_Locations class
         $this->locations = new Bros_Travel_API_Locations();
         
-        // Initialize the Bros_Travel_API_Property class
-        $this->property = new Bros_Travel_API_Property();
-
-        // Initialize the Bros_Travel_API_Reservation class
-        $this->reservation = new Bros_Travel_API_Reservation();
+     
 
         // Hook into WordPress AJAX actions
         add_action('wp_ajax_bros_travel_token', array($this, 'bros_travel_token'));
         add_action('wp_ajax_nopriv_bros_travel_token', array($this, 'bros_travel_token'));
-
-        add_action('wp_ajax_get_bros_travel_recommendations', array($this, 'get_bros_travel_recommendations'));
-        add_action('wp_ajax_nopriv_get_bros_travel_recommendations', array($this, 'get_bros_travel_recommendations'));
+       
 
         add_action('wp_ajax_get_bros_travel_properties', array($this, 'get_bros_travel_properties'));
         add_action('wp_ajax_nopriv_get_bros_travel_properties', array($this, 'get_bros_travel_properties'));
@@ -46,14 +38,9 @@ class Bros_Travel_API_AJAX {
         add_action('wp_ajax_get_bros_travel_locations', array($this, 'get_bros_travel_locations'));
         add_action('wp_ajax_nopriv_get_bros_travel_locations', array($this, 'get_bros_travel_locations'));
 
-        add_action('wp_ajax_filter_properties_and_locations', array($this, 'filter_properties_and_locations'));
-        add_action('wp_ajax_nopriv_filter_properties_and_locations', array($this, 'filter_properties_and_locations'));
+        add_action('wp_ajax_get_bros_travel_all_destinations', array($this, 'get_bros_travel_all_destinations'));
+        add_action('wp_ajax_nopriv_get_bros_travel_all_destinations', array($this, 'get_bros_travel_all_destinations'));
 
-        add_action('wp_ajax_get_bros_travel_property', array($this, 'get_bros_travel_property'));
-        add_action('wp_ajax_nopriv_get_bros_travel_property', array($this, 'get_bros_travel_property'));
-
-        add_action('wp_ajax_get_bros_travel_reservation', array($this, 'get_bros_travel_reservation'));
-        add_action('wp_ajax_nopriv_get_bros_travel_reservation', array($this, 'get_bros_travel_reservation'));
 
     }
 
@@ -83,24 +70,7 @@ class Bros_Travel_API_AJAX {
     
         die();
     }
-
-    // Function to handle AJAX request for recommendations
-    public function get_bros_travel_recommendations() {
-        // Verify nonce for security
-        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'bros-travel-nonce')) {
-            echo json_encode(['error' => 'Invalid nonce']);
-            die();
-        }
-
-        // Get recommendations from the API
-        $recommendations_data = $this->recommendations->get_recommendations();
-
-        if ($recommendations_data) {
-            wp_send_json_success($recommendations_data);
-        } else {
-            wp_send_json_error('Failed to retrieve recommendations.');
-        }
-    }
+     
 
     // Function to handle AJAX request for properties
     public function get_bros_travel_properties() {
@@ -120,55 +90,6 @@ class Bros_Travel_API_AJAX {
         }
     }
 
-    // Function to handle AJAX request for property
-    public function get_bros_travel_property() {
-        // Verify nonce for security
-       if(!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'bros-travel-nonce')) {
-           echo json_encode(['error' => 'Invalid nonce']);
-           die();
-       }
-
-       // Validate and retrieve the property ID from the POST request
-       if (!isset($_POST['propertyid']) || empty($_POST['propertyid'])) {
-           wp_send_json_error('Property ID is required');
-           die();
-       }
-
-       $property_id = intval($_POST['propertyid']);
-       // Get locations from the API
-       $property_data = $this->property->get_property($property_id);
-
-       if($property_data){
-           wp_send_json_success($property_data);
-       }else {
-           wp_send_json_error('Failed to retrieve property');
-       }
-   }
-
-    // Function to handle AJAX request for reservation
-   public function get_bros_travel_reservation() {
-    // Verify nonce for security
-   if(!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'bros-travel-nonce')) {
-       echo json_encode(['error' => 'Invalid nonce']);
-       die();
-   }
-
-   // Validate and retrieve the property ID from the POST request
-   if (!isset($_POST['uid']) || empty($_POST['uid'])) {
-       wp_send_json_error('Property ID is required');
-       die();
-   }
-
-   $uid = $_POST['uid'];
-   // Get locations from the API
-   $reservation_data = $this->reservation->get_reservation($uid);
-
-   if($reservation_data){
-       wp_send_json_success($reservation_data);
-   }else {
-       wp_send_json_error('Failed to retrieve reservation');
-   }
-}
 
     // Function to handle AJAX request for locations
     public function get_bros_travel_locations() {
@@ -189,89 +110,56 @@ class Bros_Travel_API_AJAX {
     }
 
     // Function to handle AJAX request for filtering properties and locations
-public function filter_properties_and_locations() {
-    // Verify nonce for security
+    public function get_bros_travel_all_destinations() {
+        // Verify nonce for security
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'bros-travel-nonce')) {
+            echo json_encode(['error' => 'Invalid nonce']);
+            die();
+        }
     
-    if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'bros-travel-nonce')) {
-        echo json_encode(['error' => 'Invalid nonce']);
-        die();
-    }
+        // Get properties and locations from the API
+        $properties_data = $this->properties->get_properties();
+        $locations_data = $this->locations->get_locations();
     
-    // Get the search string from POST request
-   $search_string = isset($_POST['search_string']) ? sanitize_text_field($_POST['search_string']) : '';
-
-    if (empty($search_string)) {
-        wp_send_json_error('Search string is empty.');
-        return;
-    }
-
-    // Get properties and locations from the API
-    $properties_data = $this->properties->get_properties();
-    $locations_data = $this->locations->get_locations();
-
-    $result = [];
-
-    // Check if properties and locations are valid arrays
-    if (isset($properties_data['result']) && is_array($properties_data['result']) &&
-        isset($locations_data['result']) && is_array($locations_data['result'])) {
-        
-        // Loop through properties to find matches with the search string
-        foreach ($properties_data['result'] as $property) {
-            if (stripos($property['name'], $search_string) !== false) {
-                // Find the corresponding location for this property
-                foreach ($locations_data['result'] as $location) {
-                    if ($property['locationid'] == $location['locationid']) {
-                        $result[] = [
-                            'property_id' => $property['propertyid'],
-                            'property_name' => $property['name'],
-                            'property_rating' => $property['rating'],
-                            'property_image' => $property['image'],
-                            'property_description' => $property['description'],
-                            'location_name' => $location['name'],
-                            'subregion' => $location['subregion'],
-                            'region' => $location['region'],
-                            'country' => $location['country']
-                        ];
-                        break; // Found the matching location, exit inner loop
+        $result = [];
+    
+        // Check if properties and locations are valid arrays
+        if (isset($properties_data['result']) && is_array($properties_data['result']) &&
+            isset($locations_data['result']) && is_array($locations_data['result'])) {
+            
+            foreach ($locations_data['result'] as $location) {
+                if (!empty($location)) {
+                    // Prepare the destination strings
+                    $destinationStrings = [
+                        "{$location['region']} / {$location['country']}",
+                        "{$location['subregion']} / {$location['region']} / {$location['country']}",
+                        "{$location['name']} / {$location['subregion']} / {$location['region']} / {$location['country']}",
+                    ];
+    
+                    // Merge destination strings into result
+                    $result = array_merge($result, $destinationStrings);
+    
+                    // Iterate over properties and add destination strings based on location match
+                    foreach ($properties_data['result'] as $property) {
+                        if (isset($property['locationid']) && $property['locationid'] === $location['locationid']) {
+                            $destinationString4 = "{$property['name']} / {$location['name']} / {$location['subregion']} / {$location['region']} / {$location['country']}";
+                            $result[] = $destinationString4;
+                        }
                     }
                 }
             }
         }
-
-        // Loop through locations to find matches with the search string
-        foreach ($locations_data['result'] as $location) {
-            if (stripos($location['name'], $search_string) !== false ||
-                stripos($location['subregion'], $search_string) !== false ||
-                stripos($location['region'], $search_string) !== false ||
-                stripos($location['country'], $search_string) !== false) {
-                
-                // Find all properties for this location
-                foreach ($properties_data['result'] as $property) {
-                    if ($property['locationid'] == $location['locationid']) {
-                        $result[] = [
-                            'property_id' => $property['propertyid'],
-                            'property_name' => $property['name'],
-                            'property_rating' => $property['rating'],
-                            'property_image' => $property['image'],
-                            'property_description' => $property['description'],
-                            'location_name' => $location['name'],
-                            'subregion' => $location['subregion'],
-                            'region' => $location['region'],
-                            'country' => $location['country']
-                        ];
-                    }
-                }
-            }
+    
+         // Remove duplicates
+        $result = array_unique($result);
+        // Return the result or an appropriate message if no match is found
+        if (!empty($result)) {
+            wp_send_json_success(array_values($result));
+        } else {
+            wp_send_json_error('No matching properties or locations found.');
         }
     }
-
-    // Return the result or an appropriate message if no match is found
-    if (!empty($result)) {
-        wp_send_json_success($result);
-    } else {
-        wp_send_json_error('No matching properties or locations found.');
-    }
-}
+    
 
 
 }

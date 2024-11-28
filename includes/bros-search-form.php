@@ -26,7 +26,7 @@
                 </div>
                 <div class="input-wrapper">
                     <span class="input-label">Check in</span>
-                    <input type="date" placeholder="dd/mm/yyyy">
+                    <input type="date" placeholder="dd-mm-yyyy">
                 </div>
             </div>
 
