@@ -6,12 +6,10 @@ if (!defined('ABSPATH')) {
 
 class Bros_Travel_API_AJAX {
     
-    private $login;
-    private $recommendations;
+    private $login;   
     private $properties;
     private $locations;
-    private $property;
-    private $reservation;
+    private $sa_properties;
 
     // Constructor: Initializes the required classes and hooks for AJAX
     public function __construct() {
@@ -25,8 +23,8 @@ class Bros_Travel_API_AJAX {
         // Initialize the Bros_Travel_API_Locations class
         $this->locations = new Bros_Travel_API_Locations();
         
-     
-
+        // Initialize the Bros_Travel_API_SA_Properties class
+        $this->sa_properties = new Bros_Travel_API_SA_Properties();
         // Hook into WordPress AJAX actions
         add_action('wp_ajax_bros_travel_token', array($this, 'bros_travel_token'));
         add_action('wp_ajax_nopriv_bros_travel_token', array($this, 'bros_travel_token'));
@@ -41,7 +39,8 @@ class Bros_Travel_API_AJAX {
         add_action('wp_ajax_get_bros_travel_all_destinations', array($this, 'get_bros_travel_all_destinations'));
         add_action('wp_ajax_nopriv_get_bros_travel_all_destinations', array($this, 'get_bros_travel_all_destinations'));
 
-
+        add_action('wp_ajax_get_bros_travel_sa_properties', array($this, 'get_bros_travel_sa_properties'));
+        add_action('wp_ajax_nopriv_get_bros_travel_sa_properties', array($this, 'get_bros_travel_sa_properties'));
     }
 
     // Function to handle the AJAX request for token
@@ -157,6 +156,26 @@ class Bros_Travel_API_AJAX {
             wp_send_json_success(array_values($result));
         } else {
             wp_send_json_error('No matching properties or locations found.');
+        }
+    }
+    
+
+    public function get_bros_travel_sa_properties() {
+        // Verify nonce for security
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'bros-travel-nonce')) {
+            echo json_encode(['error' => 'Invalid nonce']);
+            die();
+        }
+    
+        // Call get_sa_properties and pass the POST parameters dynamically
+        $sa_properties_data = $this->sa_properties->get_sa_properties();
+    
+        if (isset($sa_properties_data['error'])) {
+            wp_send_json_error($sa_properties_data['error']);
+        } elseif ($sa_properties_data) {
+            wp_send_json_success($sa_properties_data);
+        } else {
+            wp_send_json_error('Failed to retrieve properties.');
         }
     }
     
