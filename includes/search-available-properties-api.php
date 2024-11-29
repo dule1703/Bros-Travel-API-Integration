@@ -16,6 +16,17 @@ class Bros_Travel_API_SA_Properties extends Bros_Travel_API_Base {
         // Collect parameters from POST request
         $region = isset($_POST['region']) ? sanitize_text_field($_POST['region']) : '';
         $checkinDate = isset($_POST['checkinDate']) ? sanitize_text_field($_POST['checkinDate']) : '';
+        if ($checkinDate) {
+            // Pokušaj sa formatom DD-MM-YYYY
+            $date = DateTime::createFromFormat('d-m-Y', $checkinDate);
+            if ($date) {
+                $checkinDate = $date->format('Y-m-d'); // Konverzija u željeni format
+            } else {
+                // Pokušaj sa formatom YYYY-MM-DD
+                $date = DateTime::createFromFormat('Y-m-d', $checkinDate);
+                $checkinDate = $date && $date->format('Y-m-d') === $checkinDate ? $checkinDate : '';
+            }
+        }
         $nights = isset($_POST['nights']) ? intval($_POST['nights']) : 0;
         $rooms = isset($_POST['rooms']) ? json_decode(stripslashes($_POST['rooms']), true) : [];
     

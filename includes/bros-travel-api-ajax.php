@@ -167,17 +167,72 @@ class Bros_Travel_API_AJAX {
             die();
         }
     
-        // Call get_sa_properties and pass the POST parameters dynamically
+        // Fetch properties and locations data
         $sa_properties_data = $this->sa_properties->get_sa_properties();
+        $locations_data = $this->locations->get_locations();
     
-        if (isset($sa_properties_data['error'])) {
-            wp_send_json_error($sa_properties_data['error']);
-        } elseif ($sa_properties_data) {
+        // Ensure both responses are valid
+        if (!isset($sa_properties_data['result']) || !is_array($sa_properties_data['result'])) {
+            wp_send_json_error('Invalid properties data.');
+        }
+        if (!isset($locations_data['result']) || !is_array($locations_data['result'])) {
+            wp_send_json_error('Invalid locations data.');
+        }
+    
+        // Map locations by locationid for faster lookup
+        $locations_map = [];
+        foreach ($locations_data['result'] as $location) {
+            $locations_map[$location['locationid']] = [
+                'name' => $location['name'],
+                'subregion' => $location['subregion'],
+                'region' => $location['region'],
+                'country' => $location['country']
+            ];
+        }
+    
+        // Process each property
+        foreach ($sa_properties_data['result'] as &$property) {
+            // Add location data
+            if (isset($locations_map[$property['locationid']])) {
+                $property['location_data'] = $locations_map[$property['locationid']];
+            } else {
+                $property['location_data'] = [
+                    'name' => null,
+                    'subregion' => null,
+                    'region' => null,
+                    'country' => null
+                ];
+            }
+    
+         // Create a map for rooms by typeid
+            $rooms_map = isset($property['rooms']) ? array_column($property['rooms'], null, 'typeid') : [];
+
+            // Add room type and max to availableRooms.rooms
+            if (isset($property['availableRooms']) && is_array($property['availableRooms'])) {
+                foreach ($property['availableRooms'] as &$availableRoom) {
+                    if (isset($availableRoom['rooms']) && is_array($availableRoom['rooms'])) {
+                        foreach ($availableRoom['rooms'] as &$room) {
+                            // Add type
+                            $room['type'] = $rooms_map[$room['typeid']]['type'] ?? null;
+
+                            // Add max
+                            $room['max'] = $rooms_map[$room['typeid']]['max'] ?? null;
+                        }
+                    }
+                }
+            }
+
+        }
+    
+        // Return the updated properties data
+        if ($sa_properties_data) {
             wp_send_json_success($sa_properties_data);
         } else {
             wp_send_json_error('Failed to retrieve properties.');
         }
     }
+    
+    
     
 
 

@@ -1,4 +1,4 @@
-const { createApp, ref, reactive, watch } = Vue;
+const { createApp, ref, reactive, watch, computed } = Vue;
 
 createApp({
   setup() {
@@ -11,15 +11,17 @@ createApp({
     const destinations = reactive([]); // Store all loaded destinations
     const isListVisible = ref(false); // Define the visibility of the results list    
     // const adultsCount = ref(2);
+    const checkinDate = ref("");
     const nightsCount = ref(10);
     const isLoading = ref(false);
     const searchStatus = ref("Search Results");
     const showFilters = ref(false);
     const filteredResultsLP = ref([]);
     const selectedRatings = ref([]);
+    const selectedTypes = ref([]);
     const roomsCount = ref(1); 
     const rooms = ref([
-      { adults: 1, children: 1 } 
+      { adults: 2, children: 0 } 
     ]);
     
     // Function to handle the destination search
@@ -100,68 +102,91 @@ createApp({
       isLoading.value = true;
       searchStatus.value = "Searching data...";
       try {
+        // Prepare rooms data as JSON
+        const roomsData = rooms.value.map((room) => ({
+          adults: room.adults,
+          children: Array.isArray(room.children) ? room.children : [room.children],
+        }));
+    
+       
+        // Prepare body with all parameters
+        const bodyParams = new URLSearchParams({
+          action: "get_bros_travel_sa_properties",
+          nonce: brosTravelData.nonce,
+          region: "Halkidiki", // Destination input
+          checkinDate: formattedCheckinDate.value, // Check-in date input
+          nights: nightsCount.value || "0", // Nights dropdown
+          rooms: JSON.stringify(roomsData), // Rooms data as JSON
+        });
+    
+        // Send request to server
         const response = await fetch(brosTravelData.ajaxurl, {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
           },
-          body: new URLSearchParams({
-            action: "get_bros_travel_sa_properties",
-            nonce: brosTravelData.nonce,
-          }),
+          body: bodyParams,
         });
-
+    
         const data = await response.json();
         console.log("Available Properties: ", data);
-
-      } catch (error) {
-        console.error("Error during search:", error);
-        searchResultsLP.value = [];
-        searchStatus.value = "No properties found";
-      }
-    }
     
-
-    const loadLocationsProperties = async () => {
-      isLoading.value = true;
-      searchStatus.value = "Searching data...";
-      try {
-        const response = await fetch(brosTravelData.ajaxurl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: new URLSearchParams({
-            action: "filter_properties_and_locations",
-            nonce: brosTravelData.nonce,
-            search_string: getTrimmedDestination(searchQuery.value),            
-          }),
-        });
-
-        const data = await response.json();
         if (data.success) {
-            searchResultsLP.value = data.data;
-                      // Update status based on results
+          // Map response data to the required format for Vue component
+          searchResultsLP.value = data.data.result.map((property) => ({
+            property_id: property.propertyid,
+            property_name: property.name,
+            property_image: property.image,
+            property_rating: property.rating,
+            location_name: property.location_data.name,
+            region: property.location_data.region,
+            subregion: property.location_data.subregion,
+            country: property.location_data.country,
+            property_description: property.description,
+            rooms: property.availableRooms.map((availableRoom) =>
+              availableRoom.rooms.map((room) => ({
+                type: room.type,
+                available: room.available,
+                max: room.max,
+                board: room.board,
+                price: room.price.toFixed(2),
+              }))
+            ).flat(),           
+          }));
+    
+          // Update status based on results
           if (searchResultsLP.value.length === 0) {
-                searchStatus.value = "No properties found";
-            } else if (searchResultsLP.value.length === 1) {
-                searchStatus.value = "1 property found";
-            } else {
-                searchStatus.value = `${searchResultsLP.value.length} properties found`;
+            searchStatus.value = "No properties found";
+          } else if (searchResultsLP.value.length === 1) {
+            searchStatus.value = "1 property found";
+          } else {
+            searchStatus.value = `${searchResultsLP.value.length} properties found`;
           }
-          // Update stars for all properties
+    
+          // Update stars for all properties (if applicable)
           updateStarsInResults();
         } else {
-            searchResultsLP.value = [];
-            searchStatus.value = "No properties found";
+          searchResultsLP.value = [];
+          searchStatus.value = "No properties found";
         }
       } catch (error) {
         console.error("Error during search:", error);
         searchResultsLP.value = [];
-        searchStatus.value = "No properties found";
+        searchStatus.value = "Error during search";
+      } finally {
+        isLoading.value = false;
       }
-      isLoading.value = false;
     };
+
+    const formattedCheckinDate = computed(() => {
+      if (!checkinDate.value) return ""; 
+      const date = new Date(checkinDate.value);
+      if (!isNaN(date.getTime())) {
+        return date.toISOString().split("T")[0]; 
+      }
+      return ""; 
+    });   
+    
 
     // Function to generate star images based on the property rating
     const generateStars = (rating) => {
@@ -192,7 +217,7 @@ createApp({
       
 
     // Watch for changes in search query and filter results accordingly
-    watch(searchQuery, searchDestinations, loadLocationsProperties);
+    watch(searchQuery, searchDestinations, loadAvailableProperties);
 
     // Load destinations when the component is mounted
     loadDestinations();
@@ -224,8 +249,8 @@ createApp({
       const newRooms = [];
       for (let i = 0; i < roomsCount.value; i++) {
         newRooms.push({
-          adults: rooms.value[i]?.adults || 1, // Keep existing value or default to 1
-          children: rooms.value[i]?.children !== undefined ? rooms.value[i].children : 1 // Keep existing value or default to 1
+          adults: rooms.value[i]?.adults || 2, // Keep existing value or default to 1
+          children: rooms.value[i]?.children !== undefined ? rooms.value[i].children : 0 // Keep existing value or default to 1
         });
       }
       rooms.value = newRooms; // Update the reactive array
@@ -278,8 +303,7 @@ createApp({
       hideList,
       selectDestination,
       // adultsCount,
-      nightsCount,
-      loadLocationsProperties,
+      nightsCount,      
       searchStatus,
       generateStars,
       showFilters,
@@ -288,6 +312,8 @@ createApp({
       filteredResultsLP,
       selectedRatings,
       loadAvailableProperties,
+      checkinDate,
+      formattedCheckinDate,
       roomsCount,
       rooms,
       updateRooms
