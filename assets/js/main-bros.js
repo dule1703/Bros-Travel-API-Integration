@@ -9,14 +9,18 @@ createApp({
     const searchResults = ref([]);    
     const searchResultsLP = ref([]);
     const destinations = reactive([]); // Store all loaded destinations
-    const isListVisible = ref(false); // Define the visibility of the results list
-    const adultsCount = ref(2);
+    const isListVisible = ref(false); // Define the visibility of the results list    
+    // const adultsCount = ref(2);
     const nightsCount = ref(10);
     const isLoading = ref(false);
     const searchStatus = ref("Search Results");
     const showFilters = ref(false);
     const filteredResultsLP = ref([]);
     const selectedRatings = ref([]);
+    const roomsCount = ref(1); 
+    const rooms = ref([
+      { adults: 1, children: 1 } 
+    ]);
     
     // Function to handle the destination search
     const searchDestinations = () => {
@@ -91,6 +95,31 @@ createApp({
         console.error("Error while loading destinations:", error);
       }
     };
+
+    const loadAvailableProperties = async () => {
+      isLoading.value = true;
+      searchStatus.value = "Searching data...";
+      try {
+        const response = await fetch(brosTravelData.ajaxurl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            action: "get_bros_travel_sa_properties",
+            nonce: brosTravelData.nonce,
+          }),
+        });
+
+        const data = await response.json();
+        console.log("Available Properties: ", data);
+
+      } catch (error) {
+        console.error("Error during search:", error);
+        searchResultsLP.value = [];
+        searchStatus.value = "No properties found";
+      }
+    }
     
 
     const loadLocationsProperties = async () => {
@@ -144,10 +173,10 @@ createApp({
         }
   
         return starsHtml; // Return the generated HTML for stars
-      };
+    };
   
       // Function to update stars in the DOM when search results are loaded
-      const updateStarsInResults = () => {
+    const updateStarsInResults = () => {
         searchResultsLP.value.forEach((result) => {
           if (result.property_rating) {             
             const ratingContainer = document.querySelector(
@@ -159,7 +188,7 @@ createApp({
             }
           }
         });
-      };
+    };
       
 
     // Watch for changes in search query and filter results accordingly
@@ -190,6 +219,19 @@ createApp({
     const getTrimmedDestination = (input) => {
         return input.split(' / ')[0];
     };
+
+    const updateRooms = () => {
+      const newRooms = [];
+      for (let i = 0; i < roomsCount.value; i++) {
+        newRooms.push({
+          adults: rooms.value[i]?.adults || 1, // Keep existing value or default to 1
+          children: rooms.value[i]?.children !== undefined ? rooms.value[i].children : 1 // Keep existing value or default to 1
+        });
+      }
+      rooms.value = newRooms; // Update the reactive array
+    };
+
+    /*FILTERS*/
 
     const toggleFilters = () => {
         showFilters.value = !showFilters.value;
@@ -235,7 +277,7 @@ createApp({
       showList,
       hideList,
       selectDestination,
-      adultsCount,
+      // adultsCount,
       nightsCount,
       loadLocationsProperties,
       searchStatus,
@@ -244,7 +286,11 @@ createApp({
       toggleFilters,
       filterByRating,
       filteredResultsLP,
-      selectedRatings
+      selectedRatings,
+      loadAvailableProperties,
+      roomsCount,
+      rooms,
+      updateRooms
     };
   },
 }).mount("#brosSearchApp");

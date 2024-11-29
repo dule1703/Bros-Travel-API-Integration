@@ -1,72 +1,76 @@
 <div id="brosSearchApp" class="bros-search-app">
-        <form @submit.prevent="loadLocationsProperties" class="bros-search-form">
-            <!-- First column: Destination and Check-in -->
-            <div class="search-column">
-                <div class="input-wrapper">
-                    <span class="input-label">Destination</span>
-                    <input
-                        id="inputSearch"
-                        v-model="searchQuery"
-                        type="text"
-                        placeholder="Typing destination..."
-                        @focus="showList"
-                        @blur="hideList"
-                    />
-                    
-                    <!-- Show the list if isListVisible is true and searchResults have data -->
-                    <ul class="select-list" v-if="isListVisible && searchResults.length > 0">
-                        <li
-                            v-for="(result, index) in searchResults"
-                            :key="index"
-                            @click="selectDestination(result)"
-                        >
-                            {{ result }}
-                        </li>
-                    </ul>
-                </div>
-                <div class="input-wrapper">
-                    <span class="input-label">Check in</span>
-                    <input type="date" placeholder="dd-mm-yyyy">
-                </div>
+<form @submit.prevent="loadLocationsProperties" class="bros-search-form">
+    <!-- First column -->
+    <div class="search-column first-column">
+        <div class="input-wrapper">
+            <span class="input-label">Destination</span>
+            <input
+                id="inputSearch"
+                v-model="searchQuery"
+                type="text"
+                placeholder="Typing destination..."
+                @focus="showList"
+                @blur="hideList"
+            />
+            <ul class="select-list" v-if="isListVisible && searchResults.length > 0">
+                <li
+                    v-for="(result, index) in searchResults"
+                    :key="index"
+                    @click="selectDestination(result)"
+                >
+                    {{ result }}
+                </li>
+            </ul>
+        </div>
+        <div class="row-wrapper">
+            <div class="input-wrapper ">
+                <span class="input-label">Check-in</span>
+                <input class="padding-style" type="date" placeholder="dd-mm-yyyy">
             </div>
-
-            <!-- Second column: Nights and Rooms -->
-            <div class="search-column">
-                <div class="input-wrapper">
-                    <span class="input-label">Nights</span>
-                    <select v-model="nightsCount">
-                        <option v-for="n in 60" :key="n" :value="n">{{ n }}</option>
-                    </select>
-                </div>
-                <div class="input-wrapper">
-                    <span class="input-label">Rooms</span>
-                    <select>
-                        <option v-for="r in 10" :key="r">{{ r }}</option>
-                    </select>
-                </div>
+            <div class="input-wrapper ">
+                <span class="input-label ">Nights</span>
+                <select class="padding-style" v-model="nightsCount">
+                    <option v-for="n in 60" :key="n" :value="n">{{ n }}</option>
+                </select>
             </div>
+        </div>
+    </div>
 
-            <!-- Third column: Adults and Children -->
-            <div class="search-column">  
-                <!-- <span class="room-span">Room 1</span>       -->
-                <div class="input-wrapper">            
-                    <span class="input-label room-label">Adults</span>
-                    <select v-model="adultsCount">
-                        <option v-for="a in 10" :key="a" :value="a">{{ a }}</option>
-                    </select>
-                </div>
+    <!-- Second column -->
+    <div class="search-column second-column">
+    <!-- Rooms selector -->
+    <div class="input-wrapper">
+        <span class="input-label">Rooms</span>
+        <select v-model="roomsCount" @change="updateRooms">
+            <option v-for="r in 10" :key="r" :value="r">{{ r }}</option>
+        </select>
+    </div>
 
-                <div class="input-wrapper">
-                    <span class="input-label">Children</span>
-                    <select>
-                        <option v-for="c in 10" :key="c">{{ c }}</option>
-                    </select>
-                </div>
-            </div>
+    <!-- Dynamic rows for each room -->
+    <div v-for="(room, index) in rooms" :key="index" class="row-wrapper">
+        <span class="input-label room-span">ROOM {{ index + 1 }}</span>
+        <div class="input-wrapper">
+            <span class="input-label">Adults</span>
+            <select v-model="room.adults" class="border-style">
+                <option v-for="a in 10" :key="a" :value="a">{{ a }}</option>
+            </select>
+        </div>
+        <div class="input-wrapper">
+            <span class="input-label">Children</span>
+            <select v-model="room.children" class="border-style">
+                <option v-for="c in 10" :key="c" :value="c">{{ c }}</option>
+            </select>
+        </div>
+    </div>
 
-        <!-- Submit button for form submission -->
-            <button type="submit">Search</button>
-        </form>
+  </div>
+
+
+    <!-- Submit button -->
+    <div class="button-row">
+        <button type="submit" class="search-form-btn">Search</button>
+    </div>
+</form>
 
 
         <!-- Filters section -->
