@@ -75,7 +75,7 @@
 </form>
 
 
-        <!-- Filters section -->
+        <!-- FILTERS section -->
         <div>
             <button class="filters-button" v-if="searchResultsLP.length > 0" @click="toggleFilters">
                 {{ showFilters ? 'Hide filters' : 'Show filters' }}
@@ -101,14 +101,14 @@
                 <div class="filter-section">
                     <h5>Filter by accomodation type</h5>
                     <div class="accomodation-filters">
-                        <label v-for="type in ['hotel', 'Luxury villa', 'Private accomodation']" :key="type" class="type-filter">
+                        <label v-for="type in accommodationTypes" :key="type.value" class="type-filter">
                             <input
                                 type="checkbox"
-                                :value="type"
+                                :value="type.value"
                                 v-model="selectedTypes"
                                 @change="applyFilters"
                             />
-                            {{ type }}
+                            {{ type.label }}                          
                         </label>
                     </div>
                 </div>
@@ -119,66 +119,65 @@
         <div class="search-header">
             <h2 class="search-title">{{ searchStatus }}</h2>
         </div>
-       <!-- Load data section -->
-        <div v-if="(filteredResultsLP.length > 0 || searchResultsLP.length > 0)" class="results-section">
-        <div
-    v-for="(result, index) in (selectedRatings.length > 0 ? filteredResultsLP : searchResultsLP)"
-    :key="index"
-    class="result-item"
->
-    <!-- Prvi red: Property image and details -->
-    <div class="property-details-row">
-        <div class="property-image">
-            <a :href="`https://bros-travel.com/property/${result.property_id}/`" target="_blank">
-                <img :src="`https://services.bros-travel.com/images/properties/${result.property_id}/${result.property_image}`" :alt="result.property_name" />
-            </a>
-        </div>
-        <div class="text-data">
-            <div class="property-name">
-                <a :href="`https://bros-travel.com/property/${result.property_id}/`" target="_blank">
-                    <h3>{{ result.property_name }}</h3>
-                </a>
-            </div>
-            <div class="property-rating">
-                <div v-if="result.property_rating" class="stars">
-                    <!-- Generate stars dynamically based on property rating -->
-                    <span v-html="generateStars(result.property_rating)"></span>
+  <!-- LOAD DATA section -->
+        <div>
+            <div v-if="filteredResultsLP.length > 0" class="results-section">
+                <!-- Iterate over filtered results -->
+                <div v-for="(result, index) in filteredResultsLP" :key="index" class="result-item">
+                    <!-- Prvi red: Property image and details -->
+                    <div class="property-details-row">
+                        <div class="property-image">
+                            <a :href="`https://bros-travel.com/property/${result.property_id}/`" target="_blank">
+                                <img :src="`https://services.bros-travel.com/images/properties/${result.property_id}/${result.property_image}`" :alt="result.property_name" />
+                            </a>
+                        </div>
+                        <div class="text-data">
+                            <div class="property-name">
+                                <a :href="`https://bros-travel.com/property/${result.property_id}/`" target="_blank">
+                                    <h3>{{ result.property_name }}</h3>
+                                </a>
+                            </div>
+                            <div class="property-rating">
+                                <div v-if="result.property_rating" class="stars">
+                                    <!-- Generate stars dynamically based on property rating -->
+                                    <span v-html="generateStars(result.property_rating)"></span>
+                                </div>
+                            </div>
+                            <div class="property-location">
+                                {{ result.location_name }}, {{ result.subregion }}, {{ result.region }}, {{ result.country }}
+                            </div>
+                            <div class="property-description">
+                                {{ result.property_description }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Drugi red: Rooms table -->
+                    <div class="rooms-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Tip sobe</th>
+                                    <th>Dostupnost</th>
+                                    <th>Max osoba</th>
+                                    <th>Pansion</th>
+                                    <th>Cena (€)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(room, roomIndex) in result.rooms" :key="roomIndex">
+                                    <td data-label="Tip sobe">{{ room.type }}</td>
+                                    <td data-label="Dostupnost">{{ room.available }}</td>
+                                    <td data-label="Max osoba">{{ room.max }}</td>
+                                    <td data-label="Pansion">{{ room.board }}</td>
+                                    <td data-label="Cena (€)">{{ room.price }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-            <div class="property-location">
-                {{ result.location_name }}, {{ result.subregion }}, {{ result.region }}, {{ result.country }}
-            </div>
-            <div class="property-description">
-                {{ result.property_description }}
-            </div>
-        </div>
-    </div>
-
-    <!-- Drugi red: Rooms table -->
-    <div class="rooms-table">
-        <table>
-            <thead>
-                <tr>
-                    <th>Tip sobe</th>
-                    <th>Dostupnost</th>
-                    <th>Max osoba</th>
-                    <th>Pansion</th>
-                    <th>Cena (€)</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="(room, roomIndex) in result.rooms" :key="roomIndex">
-                    <td data-label="Tip sobe">{{ room.type }}</td>
-                    <td data-label="Dostupnost">{{ room.available }}</td>
-                    <td data-label="Max osoba">{{ room.max }}</td>
-                    <td data-label="Pansion">{{ room.board }}</td>
-                    <td data-label="Cena (€)">{{ room.price }}</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+ 
 </div>
 
-
-        </div>
 </div>

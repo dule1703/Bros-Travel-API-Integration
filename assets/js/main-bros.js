@@ -23,11 +23,16 @@ createApp({
     const rooms = ref([
       { adults: 2, children: 0 } 
     ]);
+    const accommodationTypes = ref([
+      { label: "Hotel", value: "hotel" },
+      { label: "Luxury villa", value: "luxury_villa" },
+      { label: "Private accommodation", value: "private_accommodation" },
+    ]);
+    
     
     // Function to handle the destination search
     const searchDestinations = () => {
-      if (searchQuery.value.length >= 2) {
-        console.log("Search query:", searchQuery.value);       
+      if (searchQuery.value.length >= 2) {          
     
         const filteredResults = destinations.filter((destination) => {
           if (typeof destination === "string") {
@@ -37,7 +42,7 @@ createApp({
           return false;
         });
     
-        console.log("Filtered results:", filteredResults);
+        // console.log("Filtered results:", filteredResults);
     
         if (Array.isArray(searchResults)) {
           searchResults.splice(0, searchResults.length, ...filteredResults);
@@ -102,81 +107,104 @@ createApp({
       isLoading.value = true;
       searchStatus.value = "Searching data...";
       try {
-        // Prepare rooms data as JSON
-        const roomsData = rooms.value.map((room) => ({
-          adults: room.adults,
-          children: Array.isArray(room.children) ? room.children : [room.children],
-        }));
-    
-       
-        // Prepare body with all parameters
-        const bodyParams = new URLSearchParams({
-          action: "get_bros_travel_sa_properties",
-          nonce: brosTravelData.nonce,
-          region: "Halkidiki", // Destination input
-          checkinDate: formattedCheckinDate.value, // Check-in date input
-          nights: nightsCount.value || "0", // Nights dropdown
-          rooms: JSON.stringify(roomsData), // Rooms data as JSON
-        });
-    
-        // Send request to server
-        const response = await fetch(brosTravelData.ajaxurl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: bodyParams,
-        });
-    
-        const data = await response.json();
-        console.log("Available Properties: ", data);
-    
-        if (data.success) {
-          // Map response data to the required format for Vue component
-          searchResultsLP.value = data.data.result.map((property) => ({
-            property_id: property.propertyid,
-            property_name: property.name,
-            property_image: property.image,
-            property_rating: property.rating,
-            location_name: property.location_data.name,
-            region: property.location_data.region,
-            subregion: property.location_data.subregion,
-            country: property.location_data.country,
-            property_description: property.description,
-            rooms: property.availableRooms.map((availableRoom) =>
-              availableRoom.rooms.map((room) => ({
-                type: room.type,
-                available: room.available,
-                max: room.max,
-                board: room.board,
-                price: room.price.toFixed(2),
-              }))
-            ).flat(),           
+              const extractPart = (input, partIndexFromEnd) => {
+              const parts = input.split(" / ").map((part) => part.trim()); 
+              return parts.length >= Math.abs(partIndexFromEnd) ? parts[parts.length + partIndexFromEnd] : null;
+          };
+  
+        
+          const selectedRegion = extractPart(searchQuery.value, -2); 
+          const selectedSubregion = extractPart(searchQuery.value, -3); 
+          const selectedLocation = extractPart(searchQuery.value, -4); 
+          const selectedProperty = extractPart(searchQuery.value, -5); 
+  
+          console.log("Selected Region:", selectedRegion);
+          console.log("Selected Subregion:", selectedSubregion);
+          console.log("Selected Location:", selectedLocation);
+          console.log("Selected Property:", selectedProperty);
+  
+         
+          const roomsData = rooms.value.map((room) => ({
+              adults: room.adults,
+              children: Array.isArray(room.children) ? room.children : [room.children],
           }));
-    
-          // Update status based on results
-          if (searchResultsLP.value.length === 0) {
-            searchStatus.value = "No properties found";
-          } else if (searchResultsLP.value.length === 1) {
-            searchStatus.value = "1 property found";
+  
+          const bodyParams = new URLSearchParams({
+              action: "get_bros_travel_sa_properties",
+              nonce: brosTravelData.nonce,
+              region: selectedRegion || "", 
+              checkinDate: formattedCheckinDate.value,
+              nights: nightsCount.value,
+              rooms: JSON.stringify(roomsData),
+          });
+  
+          const response = await fetch(brosTravelData.ajaxurl, {
+              method: "POST",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: bodyParams,
+          });
+  
+          const data = await response.json();
+          console.log("Available Properties: ", data);
+  
+          if (data.success) {
+              
+              searchResultsLP.value = data.data.result.map((property) => ({
+                  property_id: property.propertyid,
+                  property_name: property.name,
+                  property_image: property.image,
+                  property_rating: property.rating,
+                  location_name: property.location_data.name,
+                  region: property.location_data.region,
+                  subregion: property.location_data.subregion,
+                  country: property.location_data.country,
+                  property_description: property.description,
+                  type: property.type,
+                  rooms: property.availableRooms.map((availableRoom) =>
+                      availableRoom.rooms.map((room) => ({
+                          type: room.type,
+                          available: room.available,
+                          max: room.max,
+                          board: room.board,
+                          price: room.price.toFixed(2),
+                      }))
+                  ).flat(),
+              }));
+  
+              
+              filteredResultsLP.value = searchResultsLP.value.filter((result) => {
+                  const matchesRegion = selectedRegion ? result.region === selectedRegion : true;
+                  const matchesSubregion = selectedSubregion ? result.subregion === selectedSubregion : true;
+                  const matchesLocation = selectedLocation ? result.location_name === selectedLocation : true;
+                  const matchesProperty = selectedProperty ? result.property_name === selectedProperty : true;
+  
+                  return matchesRegion && matchesSubregion && matchesLocation && matchesProperty;
+              });
+  
+              if (filteredResultsLP.value.length === 0) {
+                  searchStatus.value = "No properties found";
+              } else if (filteredResultsLP.value.length === 1) {
+                  searchStatus.value = "1 property found";
+              } else {
+                  searchStatus.value = `${filteredResultsLP.value.length} properties found`;
+              }
           } else {
-            searchStatus.value = `${searchResultsLP.value.length} properties found`;
+              searchResultsLP.value = [];
+              filteredResultsLP.value = [];
+              searchStatus.value = "No properties found";
           }
-    
-          // Update stars for all properties (if applicable)
-          updateStarsInResults();
-        } else {
-          searchResultsLP.value = [];
-          searchStatus.value = "No properties found";
-        }
       } catch (error) {
-        console.error("Error during search:", error);
-        searchResultsLP.value = [];
-        searchStatus.value = "Error during search";
+          console.error("Error during search:", error);
+          searchResultsLP.value = [];
+          filteredResultsLP.value = [];
+          searchStatus.value = "Error during search";
       } finally {
-        isLoading.value = false;
+          isLoading.value = false;
       }
     };
+  
+  
+  
 
     const formattedCheckinDate = computed(() => {
       if (!checkinDate.value) return ""; 
@@ -186,6 +214,16 @@ createApp({
       }
       return ""; 
     });   
+
+
+    const extractRegion = (input) => {
+      if (!input) return ""; 
+    
+      const parts = input.split(" / ").map(part => part.trim()); 
+      if (parts.length < 2) return ""; 
+    
+      return parts[parts.length - 2];
+    };
     
 
     // Function to generate star images based on the property rating
@@ -201,19 +239,19 @@ createApp({
     };
   
       // Function to update stars in the DOM when search results are loaded
-    const updateStarsInResults = () => {
-        searchResultsLP.value.forEach((result) => {
-          if (result.property_rating) {             
-            const ratingContainer = document.querySelector(
-              `.property-rating[data-id="${result.property_id}"] .stars`
-            );
+    // const updateStarsInResults = () => {
+    //     searchResultsLP.value.forEach((result) => {
+    //       if (result.property_rating) {             
+    //         const ratingContainer = document.querySelector(
+    //           `.property-rating[data-id="${result.property_id}"] .stars`
+    //         );
       
-            if (ratingContainer) {
-              ratingContainer.innerHTML = generateStars(result.property_rating); 
-            }
-          }
-        });
-    };
+    //         if (ratingContainer) {
+    //           ratingContainer.innerHTML = generateStars(result.property_rating); 
+    //         }
+    //       }
+    //     });
+    // };
       
 
     // Watch for changes in search query and filter results accordingly
@@ -268,29 +306,39 @@ createApp({
         }
     };
 
-    const filterByRating = () => {
-        if (selectedRatings.value.length === 0) {
+          // Function to apply filters (rating and accommodation type)
+          const applyFilters = () => {
+            // Reset the filtered results to include all properties
             filteredResultsLP.value = [...searchResultsLP.value];
-        } else {
-            filteredResultsLP.value = searchResultsLP.value.filter((result) =>
-                selectedRatings.value.includes(result.property_rating)
-            );
-        }
-    
-        if (filteredResultsLP.value.length === 0) {
-            searchStatus.value = "No properties found";
-        } else if (filteredResultsLP.value.length === 1) {
-            searchStatus.value = "1 property found";
-        } else {
-            searchStatus.value = `${filteredResultsLP.value.length} properties found`;
-        }
-    
-        console.log("Filtered Results by rating:", filteredResultsLP.value);
-    };
-    
-      
-      
-      
+        
+            // Filter by rating
+            if (selectedRatings.value.length > 0) {
+                filteredResultsLP.value = filteredResultsLP.value.filter((result) =>
+                    selectedRatings.value.includes(result.property_rating)
+                );
+            }
+        
+            // Filter by accommodation type
+            if (selectedTypes.value.length > 0) {               
+                filteredResultsLP.value = filteredResultsLP.value.filter((result) => {                   
+                    return selectedTypes.value.includes(result.type?.toLowerCase());
+                });
+            }
+        
+            // Update search status based on the filtered results
+            if (filteredResultsLP.value.length === 0) {
+                searchStatus.value = "No properties found";
+            } else if (filteredResultsLP.value.length === 1) {
+                searchStatus.value = "1 property found";
+            } else {
+                searchStatus.value = `${filteredResultsLP.value.length} properties found`;
+            }        
+         
+        };
+        
+        
+          
+
 
     return {
       searchQuery,
@@ -298,17 +346,16 @@ createApp({
       searchResultsLP,
       searchDestinations,
       destinations,
-      isListVisible, // Make isListVisible available in the template
+      isListVisible, 
       showList,
       hideList,
-      selectDestination,
-      // adultsCount,
+      selectDestination,      
       nightsCount,      
       searchStatus,
       generateStars,
       showFilters,
-      toggleFilters,
-      filterByRating,
+      toggleFilters,      
+      applyFilters,
       filteredResultsLP,
       selectedRatings,
       loadAvailableProperties,
@@ -316,7 +363,9 @@ createApp({
       formattedCheckinDate,
       roomsCount,
       rooms,
-      updateRooms
+      updateRooms,
+      selectedTypes,
+      accommodationTypes
     };
   },
 }).mount("#brosSearchApp");
