@@ -18,7 +18,7 @@ createApp({
     const showFilters = ref(false);
     const filteredResultsLP = ref([]);
     const selectedRatings = ref([]);
-    const selectedTypes = ref([]);
+    const selectedTypes = ref([]);    
     const roomsCount = ref(1); 
     const rooms = ref([
       { adults: 2, children: 0 } 
@@ -116,18 +116,13 @@ createApp({
           const selectedRegion = extractPart(searchQuery.value, -2); 
           const selectedSubregion = extractPart(searchQuery.value, -3); 
           const selectedLocation = extractPart(searchQuery.value, -4); 
-          const selectedProperty = extractPart(searchQuery.value, -5); 
-  
-          console.log("Selected Region:", selectedRegion);
-          console.log("Selected Subregion:", selectedSubregion);
-          console.log("Selected Location:", selectedLocation);
-          console.log("Selected Property:", selectedProperty);
-  
-         
+          const selectedProperty = extractPart(searchQuery.value, -5);  
+
           const roomsData = rooms.value.map((room) => ({
               adults: room.adults,
               children: Array.isArray(room.children) ? room.children : [room.children],
-          }));
+          }));         
+        
   
           const bodyParams = new URLSearchParams({
               action: "get_bros_travel_sa_properties",
@@ -150,6 +145,8 @@ createApp({
           if (data.success) {
               
               searchResultsLP.value = data.data.result.map((property) => ({
+       
+                  
                   property_id: property.propertyid,
                   property_name: property.name,
                   property_image: property.image,
@@ -160,15 +157,13 @@ createApp({
                   country: property.location_data.country,
                   property_description: property.description,
                   type: property.type,
-                  rooms: property.availableRooms.map((availableRoom) =>
-                      availableRoom.rooms.map((room) => ({
-                          type: room.type,
-                          available: room.available,
-                          max: room.max,
-                          board: room.board,
-                          price: room.price.toFixed(2),
-                      }))
-                  ).flat(),
+                  rooms: property.availableRooms[0]?.rooms.map((room) => ({
+                    type: room.type,
+                    available: room.available,
+                    max: room.max,
+                    board: room.board,
+                    price: room.price.toFixed(2),
+                  })) || [],
               }));
   
               
@@ -204,7 +199,7 @@ createApp({
     };
   
   
-  
+    
 
     const formattedCheckinDate = computed(() => {
       if (!checkinDate.value) return ""; 
