@@ -112,6 +112,34 @@
                         </label>
                     </div>
                 </div>
+                <div class="filter-section">
+                    <h5>Filter by Availability</h5>
+                    <div class="accomodation-filters">
+                        <label v-for="type in availableTypes" :key="type.value" class="type-filter">
+                            <input
+                                type="checkbox"
+                                :value="type.value"
+                                v-model="selectedAvailable"
+                                @change="applyFilters"
+                            />
+                            {{ type.label }}                          
+                        </label>
+                    </div>
+                </div>
+                <div class="filter-section">
+                    <h5>Filter by Board</h5>
+                    <div class="accomodation-filters">
+                        <label v-for="type in boardTypes" :key="type.value" class="type-filter">
+                            <input
+                                type="checkbox"
+                                :value="type.value"
+                                v-model="selectedBoard"
+                                @change="applyFilters"
+                            />
+                            {{ type.label }}                          
+                        </label>
+                    </div>
+                </div>
             </div>
         </div>
 

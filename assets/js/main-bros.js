@@ -18,17 +18,38 @@ createApp({
     const showFilters = ref(false);
     const filteredResultsLP = ref([]);
     const selectedRatings = ref([]);
-    const selectedTypes = ref([]);    
+    const selectedTypes = ref([]); 
+    const selectedAvailable = ref([]); 
+    const selectedBoard = ref([]);   
     const roomsCount = ref(1); 
     const rooms = ref([
       { adults: 2, children: 0 } 
     ]);
     const accommodationTypes = ref([
       { label: "Hotel", value: "hotel" },
-      { label: "Luxury villa", value: "luxury_villa" },
-      { label: "Private accommodation", value: "private_accommodation" },
+      { label: "Luxury villa", value: "villa" },
+      { label: "Private accommodation", value: "private" },
     ]);
-    
+    const availableTypes = ref([
+      { label: "Available", value: "available" },
+      { label: "On request", value: "on_request" },
+      { label: "Stop sale", value: "stop_sale" },
+    ]);
+    const boardTypes = ref([
+      { label: "AI", value: "AI" },
+      { label: "BB", value: "BB" },
+      { label: "FB", value: "FB" },
+      { label: "HB", value: "HB" },
+      { label: "RR", value: "RR" },
+      { label: "UAI", value: "UAI" }      
+    ]);
+   
+    // Define reactive variables for selected filters
+    const selectedRegion = ref(null);
+    const selectedSubregion = ref(null);
+    const selectedLocation = ref(null);
+    const selectedProperty = ref(null);
+
     
     // Function to handle the destination search
     const searchDestinations = () => {
@@ -104,6 +125,8 @@ createApp({
     };
 
     const loadAvailableProperties = async () => {
+      searchResultsLP.value = []; // Clear previous search results
+      filteredResultsLP.value = []; // Clear previous filtered results
       isLoading.value = true;
       searchStatus.value = "Searching data...";
       try {
@@ -113,10 +136,10 @@ createApp({
           };
   
         
-          const selectedRegion = extractPart(searchQuery.value, -2); 
-          const selectedSubregion = extractPart(searchQuery.value, -3); 
-          const selectedLocation = extractPart(searchQuery.value, -4); 
-          const selectedProperty = extractPart(searchQuery.value, -5);  
+          selectedRegion.value = extractPart(searchQuery.value, -2); 
+          selectedSubregion.value = extractPart(searchQuery.value, -3); 
+          selectedLocation.value = extractPart(searchQuery.value, -4); 
+          selectedProperty.value = extractPart(searchQuery.value, -5);  
 
           const roomsData = rooms.value.map((room) => ({
               adults: room.adults,
@@ -127,7 +150,7 @@ createApp({
           const bodyParams = new URLSearchParams({
               action: "get_bros_travel_sa_properties",
               nonce: brosTravelData.nonce,
-              region: selectedRegion || "", 
+              region: selectedRegion.value || "", 
               checkinDate: formattedCheckinDate.value,
               nights: nightsCount.value,
               rooms: JSON.stringify(roomsData),
@@ -142,8 +165,7 @@ createApp({
           const data = await response.json();
           console.log("Available Properties: ", data);
   
-          if (data.success) {
-              
+          if (data.success) {              
               searchResultsLP.value = data.data.result.map((property) => ({
        
                   
@@ -168,10 +190,10 @@ createApp({
   
               
               filteredResultsLP.value = searchResultsLP.value.filter((result) => {
-                  const matchesRegion = selectedRegion ? result.region === selectedRegion : true;
-                  const matchesSubregion = selectedSubregion ? result.subregion === selectedSubregion : true;
-                  const matchesLocation = selectedLocation ? result.location_name === selectedLocation : true;
-                  const matchesProperty = selectedProperty ? result.property_name === selectedProperty : true;
+                  const matchesRegion = selectedRegion.value ? result.region === selectedRegion.value : true;
+                  const matchesSubregion = selectedSubregion.value ? result.subregion === selectedSubregion.value : true;
+                  const matchesLocation = selectedLocation.value ? result.location_name === selectedLocation.value : true;
+                  const matchesProperty = selectedProperty.value ? result.property_name === selectedProperty.value : true;
   
                   return matchesRegion && matchesSubregion && matchesLocation && matchesProperty;
               });
@@ -233,22 +255,7 @@ createApp({
         return starsHtml; // Return the generated HTML for stars
     };
   
-      // Function to update stars in the DOM when search results are loaded
-    // const updateStarsInResults = () => {
-    //     searchResultsLP.value.forEach((result) => {
-    //       if (result.property_rating) {             
-    //         const ratingContainer = document.querySelector(
-    //           `.property-rating[data-id="${result.property_id}"] .stars`
-    //         );
-      
-    //         if (ratingContainer) {
-    //           ratingContainer.innerHTML = generateStars(result.property_rating); 
-    //         }
-    //       }
-    //     });
-    // };
-      
-
+  
     // Watch for changes in search query and filter results accordingly
     watch(searchQuery, searchDestinations, loadAvailableProperties);
 
@@ -300,37 +307,79 @@ createApp({
           document.querySelector('.filters-wrapper').classList.remove('visible');
         }
     };
-
-          // Function to apply filters (rating and accommodation type)
-          const applyFilters = () => {
-            // Reset the filtered results to include all properties
-            filteredResultsLP.value = [...searchResultsLP.value];
-        
-            // Filter by rating
-            if (selectedRatings.value.length > 0) {
-                filteredResultsLP.value = filteredResultsLP.value.filter((result) =>
-                    selectedRatings.value.includes(result.property_rating)
-                );
-            }
-        
-            // Filter by accommodation type
-            if (selectedTypes.value.length > 0) {               
-                filteredResultsLP.value = filteredResultsLP.value.filter((result) => {                   
-                    return selectedTypes.value.includes(result.type?.toLowerCase());
-                });
-            }
-        
-            // Update search status based on the filtered results
-            if (filteredResultsLP.value.length === 0) {
-                searchStatus.value = "No properties found";
-            } else if (filteredResultsLP.value.length === 1) {
-                searchStatus.value = "1 property found";
-            } else {
-                searchStatus.value = `${filteredResultsLP.value.length} properties found`;
-            }        
          
-        };
+    const applyFilters = () => {
+      console.log("Applying Filters...");
+      console.log("Selected Ratings:", selectedRatings.value);
+      console.log("Selected Types:", selectedTypes.value);
+      console.log("Selected Availability:", selectedAvailable.value);
+      console.log("Selected Board:", selectedBoard.value);
+      // Reset filtered results if no filters are selected
+      if (
+          selectedRatings.value.length === 0 &&
+          selectedTypes.value.length === 0 &&
+          selectedAvailable.value.length === 0 &&
+          selectedBoard.value.length === 0
+      ) {
+          console.log("No filters selected. Resetting to search context.");
+          filteredResultsLP.value = searchResultsLP.value.filter((result) => {
+              const matchesRegion = selectedRegion.value ? result.region === selectedRegion.value : true;
+              const matchesSubregion = selectedSubregion.value ? result.subregion === selectedSubregion.value : true;
+              const matchesLocation = selectedLocation.value ? result.location_name === selectedLocation.value : true;
+              const matchesProperty = selectedProperty.value ? result.property_name === selectedProperty.value : true;
+  
+              return matchesRegion && matchesSubregion && matchesLocation && matchesProperty;
+          });
+          updateSearchStatus();
+          return;
+      }
+  
+      // Apply filtering logic
+      filteredResultsLP.value = searchResultsLP.value.filter((result) => {
+          const matchesRating = selectedRatings.value.length > 0
+              ? selectedRatings.value.includes(result.property_rating)
+              : true;
+  
+          const matchesType = selectedTypes.value.length > 0
+              ? selectedTypes.value.includes(result.type?.toLowerCase())
+              : true;
+  
+          const matchesAvailability = selectedAvailable.value.length > 0
+              ? result.rooms.some((room) =>
+                    selectedAvailable.value.includes(room.available)
+                )
+              : true;
+
+          const matchesBoard = selectedBoard.value.length > 0
+          ? result.rooms.some((room) =>
+                selectedBoard.value.includes(room.board)
+            )
+          : true;
+  
+          const matchesRegion = selectedRegion.value ? result.region === selectedRegion.value : true;
+          const matchesSubregion = selectedSubregion.value ? result.subregion === selectedSubregion.value : true;
+          const matchesLocation = selectedLocation.value ? result.location_name === selectedLocation.value : true;
+          const matchesProperty = selectedProperty.value ? result.property_name === selectedProperty.value : true;
+  
+          return matchesRating && matchesType && matchesAvailability && matchesBoard && matchesRegion && matchesSubregion && matchesLocation && matchesProperty;
+      });
+  
+      updateSearchStatus();
+  };
+  
+  
         
+         
+    const updateSearchStatus = () => {
+        if (filteredResultsLP.value.length === 0) {
+            searchStatus.value = "No properties found";
+        } else if (filteredResultsLP.value.length === 1) {
+            searchStatus.value = "1 property found";
+        } else {
+            searchStatus.value = `${filteredResultsLP.value.length} properties found`;
+        }
+    };
+      
         
           
 
@@ -351,16 +400,20 @@ createApp({
       showFilters,
       toggleFilters,      
       applyFilters,
-      filteredResultsLP,
-      selectedRatings,
+      filteredResultsLP,      
       loadAvailableProperties,
       checkinDate,
       formattedCheckinDate,
       roomsCount,
       rooms,
       updateRooms,
+      selectedRatings,
       selectedTypes,
-      accommodationTypes
+      selectedAvailable,
+      selectedBoard,
+      accommodationTypes,
+      availableTypes,
+      boardTypes
     };
   },
 }).mount("#brosSearchApp");
