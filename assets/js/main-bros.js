@@ -20,6 +20,8 @@ createApp({
     const selectedRatings = ref([]);
     const selectedTypes = ref([]); 
     const selectedAvailable = ref([]); 
+    const priceRange = reactive({ min: 0, max: 0 });
+    const selectedPrice = reactive({ min: 0, max: 0 });
     const selectedBoard = ref([]);   
     const roomsCount = ref(1); 
     const rooms = ref([
@@ -191,7 +193,20 @@ createApp({
                   })) || [],
               }));
   
+              const allPrices = searchResultsLP.value.flatMap((property) => property.rooms.map((room) => room.price));
               
+              if (allPrices.length > 0) {
+                priceRange.min = Math.min(...allPrices);
+                priceRange.max = Math.max(...allPrices);
+                selectedPrice.min = priceRange.min;
+                selectedPrice.max = priceRange.max;
+            } else {
+                priceRange.min = 0;
+                priceRange.max = 0;
+                selectedPrice.min = 0;
+                selectedPrice.max = 0;
+            }
+        
               filteredResultsLP.value = searchResultsLP.value.filter((result) => {
                   const matchesRegion = selectedRegion.value ? result.region === selectedRegion.value : true;
                   const matchesSubregion = selectedSubregion.value ? result.subregion === selectedSubregion.value : true;
@@ -352,12 +367,23 @@ createApp({
       console.log("Selected Types:", selectedTypes.value);
       console.log("Selected Availability:", selectedAvailable.value);
       console.log("Selected Board:", selectedBoard.value);
-      // Reset filtered results if no filters are selected
+      console.log("Selected Price Range:", selectedPrice);
+  
+    //   // Ensure min is not greater than max
+    //   if (selectedPrice.min >= selectedPrice.max) {
+    //     console.warn("Min price is greater than or equal to max price. Adjusting values.");
+    //     selectedPrice.min = Math.min(selectedPrice.max - 1, priceRange.max - 1);
+    //     selectedPrice.max = Math.max(selectedPrice.min + 1, priceRange.min + 1);
+    // }
+  
+      // Reset to context if no filters are selected
       if (
           selectedRatings.value.length === 0 &&
           selectedTypes.value.length === 0 &&
           selectedAvailable.value.length === 0 &&
-          selectedBoard.value.length === 0
+          selectedBoard.value.length === 0 &&
+          selectedPrice.min === priceRange.min &&
+          selectedPrice.max === priceRange.max
       ) {
           console.log("No filters selected. Resetting to search context.");
           filteredResultsLP.value = searchResultsLP.value.filter((result) => {
@@ -373,37 +399,60 @@ createApp({
       }
   
       // Apply filtering logic
-      filteredResultsLP.value = searchResultsLP.value.filter((result) => {
-          const matchesRating = selectedRatings.value.length > 0
-              ? selectedRatings.value.includes(result.property_rating)
-              : true;
+      filteredResultsLP.value = searchResultsLP.value
+          .map((property) => {
+              // Filter rooms within each property
+              const filteredRooms = property.rooms.filter((room) => {
+                  const roomPrice = parseFloat(room.price);
+                  const matchesPrice = roomPrice >= (selectedPrice.min || 0) && roomPrice <= (selectedPrice.max || 0);
+                  const matchesAvailability = selectedAvailable.value.length > 0
+                      ? selectedAvailable.value.includes(room.available)
+                      : true;
+                  const matchesBoard = selectedBoard.value.length > 0
+                      ? selectedBoard.value.includes(room.board)
+                      : true;
+                  return matchesPrice && matchesAvailability && matchesBoard ;
+              });
   
-          const matchesType = selectedTypes.value.length > 0
-              ? selectedTypes.value.includes(result.type?.toLowerCase())
-              : true;
+              // Include property only if it has matching rooms
+              if (filteredRooms.length > 0) {
+                  return {
+                      ...property,
+                      rooms: filteredRooms, // Keep only filtered rooms
+                  };
+              }
+              return null; // Exclude property if no rooms match
+          })
+          .filter((property) => property !== null) // Remove properties with no matching rooms
+          .filter((property) => {
+              // Additional property-level filters
+              const matchesRating = selectedRatings.value.length > 0
+                  ? selectedRatings.value.includes(property.property_rating)
+                  : true;
   
-          const matchesAvailability = selectedAvailable.value.length > 0
-              ? result.rooms.some((room) =>
-                    selectedAvailable.value.includes(room.available)
-                )
-              : true;
-
-          const matchesBoard = selectedBoard.value.length > 0
-          ? result.rooms.some((room) =>
-                selectedBoard.value.includes(room.board)
-            )
-          : true;
+              const matchesType = selectedTypes.value.length > 0
+                  ? selectedTypes.value.includes(property.type?.toLowerCase())
+                  : true;
   
-          const matchesRegion = selectedRegion.value ? result.region === selectedRegion.value : true;
-          const matchesSubregion = selectedSubregion.value ? result.subregion === selectedSubregion.value : true;
-          const matchesLocation = selectedLocation.value ? result.location_name === selectedLocation.value : true;
-          const matchesProperty = selectedProperty.value ? result.property_name === selectedProperty.value : true;
+              const matchesRegion = selectedRegion.value ? property.region === selectedRegion.value : true;
+              const matchesSubregion = selectedSubregion.value ? property.subregion === selectedSubregion.value : true;
+              const matchesLocation = selectedLocation.value ? property.location_name === selectedLocation.value : true;
+              const matchesProperty = selectedProperty.value ? property.property_name === selectedProperty.value : true;
   
-          return matchesRating && matchesType && matchesAvailability && matchesBoard && matchesRegion && matchesSubregion && matchesLocation && matchesProperty;
-      });
+              return (
+                  matchesRating &&
+                  matchesType &&
+                  matchesRegion &&
+                  matchesSubregion &&
+                  matchesLocation &&
+                  matchesProperty
+              );
+          });
   
       updateSearchStatus();
   };
+  
+  
   
   
         
@@ -452,7 +501,10 @@ createApp({
       accommodationTypes,
       availableTypes,
       boardTypes,
-      getOrdinalSuffix
+      getOrdinalSuffix,
+      priceRange,
+      selectedPrice
+
     };
   },
 }).mount("#brosSearchApp");

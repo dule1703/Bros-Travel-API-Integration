@@ -162,6 +162,30 @@
                         </label>
                     </div>
                 </div>
+                <div class="filter-section">
+                    <h5>Filter by Price</h5>
+                    <div class="price-slider">
+                        <label class="price-label">Min: {{ selectedPrice.min }} €</label>
+                        <input
+                            type="range"
+                            v-model="selectedPrice.min"
+                            :min="priceRange.min"
+                            :max="priceRange.max"
+                            step="1"
+                            @input="applyFilters"
+                        />
+                        <label class="price-label">Max: {{ selectedPrice.max }} €</label>
+                        <input
+                            type="range"
+                            v-model="selectedPrice.max"
+                            :min="priceRange.min"
+                            :max="priceRange.max"
+                            step="1"
+                            @input="applyFilters"
+                        />
+                    </div>
+                </div>
+
             </div>
         </div>
 
