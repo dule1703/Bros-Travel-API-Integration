@@ -38,7 +38,7 @@
     </div>
 
     <!-- Second column -->
-    <div class="search-column second-column">
+<div class="search-column second-column">
     <!-- Rooms selector -->
     <div class="input-wrapper">
         <span class="input-label">Rooms</span>
@@ -48,24 +48,46 @@
     </div>
 
     <!-- Dynamic rows for each room -->
-    <div v-for="(room, index) in rooms" :key="index" class="row-wrapper">
-        <span class="input-label room-span">ROOM {{ index + 1 }}</span>
-        <div class="input-wrapper">
-            <span class="input-label">Adults</span>
-            <select v-model="room.adults" class="border-style">
-                <option v-for="a in 10" :key="a" :value="a">{{ a }}</option>
-            </select>
+    <div v-for="(room, index) in rooms" :key="index" class="room-wrapper">
+        <div class="row-wrapper">
+            <span class="input-label room-span">ROOM {{ index + 1 }}</span>
+            
+            <!-- Adults Input -->
+            <div class="input-wrapper">
+                <span class="input-label">Adults</span>
+                <select v-model="room.adults" class="border-style">
+                    <option v-for="a in 10" :key="a" :value="a">{{ a }}</option>
+                </select>
+            </div>
+            
+            <!-- Children Input -->
+            <div class="input-wrapper">
+                <span class="input-label">Children</span>
+                <select v-model="room.children" class="border-style" @change="updateRooms">
+                    <option :value="0" key="0">0</option>
+                    <option v-for="c in 10" :key="c" :value="c">{{ c }}</option>
+                </select>
+            </div>
         </div>
-        <div class="input-wrapper">
-            <span class="input-label">Children</span>
-            <select v-model="room.children" class="border-style">
-                <option :value="0" key="0">0</option>
-                <option v-for="c in 10" :key="c" :value="c">{{ c }}</option>
-            </select>
+
+        <!-- Child Age Inputs -->
+        <div v-if="room.children > 0" class="child-age-wrapper">
+            <div v-for="(age, childIndex) in room.childAges" :key="`child-age-${index}-${childIndex}`" class="child-age-row">
+                <label class="child-age-label">
+                    {{ childIndex + 1 }}{{ getOrdinalSuffix(childIndex + 1) }} child age:
+                </label>
+                <div class="child-age-wrapper">
+                    <span class="input-label">Age</span>
+                    <select v-model="room.childAges[childIndex]" class="border-style">                       
+                        <option v-for="ca in 17" :key="ca" :value="ca">{{ ca }}</option>
+                    </select>
+                </div>
+               
+            </div>
         </div>
     </div>
+</div>
 
-  </div>
 
 
     <!-- Submit button -->

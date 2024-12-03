@@ -23,7 +23,7 @@ createApp({
     const selectedBoard = ref([]);   
     const roomsCount = ref(1); 
     const rooms = ref([
-      { adults: 2, children: 0 } 
+      { adults: 2, children: 0, childAges: [] }
     ]);
     const accommodationTypes = ref([
       { label: "Hotel", value: "hotel" },
@@ -142,9 +142,12 @@ createApp({
           selectedProperty.value = extractPart(searchQuery.value, -5);  
 
           const roomsData = rooms.value.map((room) => ({
-              adults: room.adults,
-              children: Array.isArray(room.children) ? room.children : [room.children],
-          }));         
+            adults: room.adults,
+            children: room.childAges.filter((age) => age !== null), // Filter out `null` ages
+         }));
+    
+        // Log the final formatted rooms data
+        console.log("Rooms Data to Send:", JSON.stringify(roomsData));         
         
   
           const bodyParams = new URLSearchParams({
@@ -286,15 +289,50 @@ createApp({
     };
 
     const updateRooms = () => {
-      const newRooms = [];
+      const newRooms = []; // Create a new array to hold the updated room data
       for (let i = 0; i < roomsCount.value; i++) {
-        newRooms.push({
-          adults: rooms.value[i]?.adults || 2, // Keep existing value or default to 1
-          children: rooms.value[i]?.children !== undefined ? rooms.value[i].children : 0 // Keep existing value or default to 1
-        });
+          // Get the current room data or initialize default values if it doesn't exist
+          const currentRoom = rooms.value[i] || { adults: 2, children: 0, childAges: [] };
+  
+          // Get the number of children in the current room
+          const childrenCount = currentRoom.children || 0;
+  
+          // Ensure the `childAges` array matches the number of children
+          const childAges = currentRoom.childAges || [];
+  
+          if (childAges.length < childrenCount) {
+              // Add additional entries (default to `null`) if the number of child ages is less than the number of children
+              for (let j = childAges.length; j < childrenCount; j++) {
+                  childAges.push(null); // Default value for each new child
+              }
+          } else if (childAges.length > childrenCount) {
+              // Remove extra entries if the number of child ages exceeds the number of children
+              childAges.splice(childrenCount);
+          }
+  
+          // Push the updated room data to the newRooms array
+          newRooms.push({
+              adults: currentRoom.adults, // Retain the number of adults
+              children: childrenCount, // Set the number of children
+              childAges // Update the child ages array
+          });
       }
-      rooms.value = newRooms; // Update the reactive array
+      // Replace the old rooms array with the updated one
+      rooms.value = newRooms;     
+  };
+  
+  
+  
+
+    const getOrdinalSuffix = (number) => {
+      const j = number % 10;
+      const k = number % 100;
+      if (j === 1 && k !== 11) return "st";
+      if (j === 2 && k !== 12) return "nd";
+      if (j === 3 && k !== 13) return "rd";
+      return "th";
     };
+    
 
     /*FILTERS*/
 
@@ -413,7 +451,8 @@ createApp({
       selectedBoard,
       accommodationTypes,
       availableTypes,
-      boardTypes
+      boardTypes,
+      getOrdinalSuffix
     };
   },
 }).mount("#brosSearchApp");
