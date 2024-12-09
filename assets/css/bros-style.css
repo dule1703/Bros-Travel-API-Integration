@@ -42,6 +42,37 @@
     flex: 1;
 }
 
+.select-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  max-height: 200px;
+  overflow-y: auto;
+  position: absolute;
+  width: 100%;
+  z-index: 1000;
+}
+
+.select-list li {
+  padding: 10px;
+  cursor: pointer;
+  display: flex; /* Овде користимо flexbox за позиционирање иконе и текста */
+  align-items: center;
+}
+
+.select-list li:hover {
+  background-color: #f0f0f0;
+}
+
+.destination-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 10px; /* Додајемо размак између иконе и текста */
+}
+
+
 .input-label {
   position: absolute;
   top: 0;
@@ -64,7 +95,7 @@
 .bros-search-app input[type="text"],
 .bros-search-app input[type="date"],
 .bros-search-app select {
-  padding: 15px 10px 1px 10px;  
+  padding: 15px 10px 3px 10px;  
   border-radius: 8px;
   outline: none;
   font-size: 13px;
@@ -73,6 +104,7 @@
   width: 100%;
   color: #014b8c; 
   border: none;
+  height: 38px !important;
 }
 
 .padding-style {

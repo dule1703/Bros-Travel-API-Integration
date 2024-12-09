@@ -11,22 +11,23 @@
                 placeholder="Typing destination..."
                 @focus="showList"
                 @blur="hideList"
-                
             />
             <ul class="select-list" v-if="isListVisible && searchResults.length > 0">
                 <li
-                    v-for="(result, index) in searchResults"
-                    :key="index"
-                    @click="selectDestination(result)"
+                v-for="(result, index) in searchResults"
+                :key="index"
+                @click="selectDestination(result.text)"
                 >
-                    {{ result }}
+                <img :src="result.icon" alt="Destination icon" class="destination-icon" />
+                <span>{{ result.text }}</span>
                 </li>
             </ul>
         </div>
+
         <div class="row-wrapper">
             <div class="input-wrapper ">
                 <span class="input-label">Check-in</span>
-                <input v-model="checkinDate" class="padding-style" type="date" placeholder="dd-mm-yyyy">
+                <input v-model="checkinDate" class="padding-style" type="date" placeholder="dd-mm-yyyy"  @focus="showDatepicker">
             </div>
             <div class="input-wrapper ">
                 <span class="input-label ">Nights</span>

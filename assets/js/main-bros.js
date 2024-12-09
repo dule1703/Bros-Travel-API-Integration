@@ -52,37 +52,32 @@ createApp({
     const selectedLocation = ref(null);
     const selectedProperty = ref(null);
 
-    
+    /***FUNCTIONS***/
     // Function to handle the destination search
-    const searchDestinations = () => {
-      if (searchQuery.value.length >= 2) {          
     
+    const searchDestinations = () => {
+      if (searchQuery.value.length >= 2) {
         const filteredResults = destinations.filter((destination) => {
-          if (typeof destination === "string") {
-            const searchString = destination.toLowerCase();
+          // Ensure we are checking the `text` property of each destination object
+          if (destination.text) {
+            const searchString = destination.text.toLowerCase();
             return searchString.includes(searchQuery.value.toLowerCase());
           }
           return false;
         });
     
-        // console.log("Filtered results:", filteredResults);
+        // Update the searchResults array reactively
+        searchResults.value = filteredResults;
     
-        if (Array.isArray(searchResults)) {
-          searchResults.splice(0, searchResults.length, ...filteredResults);
-        } else {
-          searchResults.value = filteredResults;
-        }
-    
+        // Show the list if there are matching results
         isListVisible.value = filteredResults.length > 0;
       } else {
-        if (Array.isArray(searchResults)) {
-          searchResults.splice(0, searchResults.length);
-        } else {
-          searchResults.value = [];
-        }
+        // Reset the search results and hide the list if the query is too short
+        searchResults.value = [];
         isListVisible.value = false;
       }
     };
+    
     
     // Function to load destinations from the server when the page loads
     const loadDestinations = async () => {
@@ -114,10 +109,21 @@ createApp({
         if (data.success && data.data) {
           const locationsArray = Object.values(data.data);
     
-          // Directly modify the reactive array
-          destinations.splice(0, destinations.length, ...locationsArray);
+          // Add icons based on the number of '/' in the string
+          const destinationsWithIcons = locationsArray.map((location) => {
+            const slashCount = (location.match(/\//g) || []).length;
+            const icon =
+              slashCount === 4
+                ? "/wp-content/plugins/bros-travel-plugin/assets/images/bed.svg"
+                : "/wp-content/plugins/bros-travel-plugin/assets/images/place.svg";
+            return {
+              text: location,
+              icon: icon,
+            };
+          });
     
-          
+          // Update the reactive destinations array
+          destinations.splice(0, destinations.length, ...destinationsWithIcons);
         } else {
           console.error("Error: locations not found or not valid.");
         }
@@ -125,23 +131,35 @@ createApp({
         console.error("Error while loading destinations:", error);
       }
     };
+    
 
     const loadAvailableProperties = async () => {
-      searchResultsLP.value = []; // Clear previous search results
-      filteredResultsLP.value = []; // Clear previous filtered results
-      isLoading.value = true;
-      searchStatus.value = "Searching data...";
-      try {
-              const extractPart = (input, partIndexFromEnd) => {
-              const parts = input.split(" / ").map((part) => part.trim()); 
-              return parts.length >= Math.abs(partIndexFromEnd) ? parts[parts.length + partIndexFromEnd] : null;
-          };
-  
-        
-          selectedRegion.value = extractPart(searchQuery.value, -2); 
-          selectedSubregion.value = extractPart(searchQuery.value, -3); 
-          selectedLocation.value = extractPart(searchQuery.value, -4); 
-          selectedProperty.value = extractPart(searchQuery.value, -5);  
+        searchResultsLP.value = []; // Clear previous search results
+        filteredResultsLP.value = []; // Clear previous filtered results     
+        isLoading.value = true;
+        searchStatus.value = "Searching data...";
+        resetFilters();
+
+        try {
+                const extractPart = (input, partIndexFromEnd) => {
+        if (!input) return null; // Handle empty or null input
+        const parts = input.split(" / ").map((part) => part.trim());
+        return parts.length >= Math.abs(partIndexFromEnd)
+          ? parts[parts.length + partIndexFromEnd]
+          : null;
+    };
+
+    // Extract query parts
+        selectedRegion.value = extractPart(searchQuery.value, -2);
+        selectedSubregion.value = extractPart(searchQuery.value, -3);
+        selectedLocation.value = extractPart(searchQuery.value, -4);
+        selectedProperty.value = extractPart(searchQuery.value, -5);
+
+        console.log("Extracted Property:", selectedProperty.value);
+        console.log("Extracted Location:", selectedLocation.value);
+        console.log("Extracted Subregion:", selectedSubregion.value);
+        console.log("Extracted Region:", selectedRegion.value);
+
 
           const roomsData = rooms.value.map((room) => ({
             adults: room.adults,
@@ -192,8 +210,26 @@ createApp({
                     price: room.price.toFixed(2),
                   })) || [],
               }));
+
+               // Filter properties by selected region, subregion, or location
+            const filteredProperties = searchResultsLP.value.filter((property) => {
+              const matchesRegion = selectedRegion.value
+          ? property.region === selectedRegion.value
+          : true;
+        const matchesSubregion = selectedSubregion.value
+          ? property.subregion === selectedSubregion.value
+          : true;
+        const matchesLocation = selectedLocation.value
+          ? property.location_name === selectedLocation.value
+          : true;
+        const matchesProperty = selectedProperty.value
+          ? property.property_name === selectedProperty.value
+          : true;
+
+              return matchesRegion && matchesSubregion && matchesLocation && matchesProperty;
+          });
   
-              const allPrices = searchResultsLP.value.flatMap((property) => property.rooms.map((room) => room.price));
+          const allPrices = filteredProperties.flatMap((property) => property.rooms.map((room) => parseFloat(room.price)));
               
               if (allPrices.length > 0) {
                 priceRange.min = Math.min(...allPrices);
@@ -207,15 +243,8 @@ createApp({
                 selectedPrice.max = 0;
             }
         
-              filteredResultsLP.value = searchResultsLP.value.filter((result) => {
-                  const matchesRegion = selectedRegion.value ? result.region === selectedRegion.value : true;
-                  const matchesSubregion = selectedSubregion.value ? result.subregion === selectedSubregion.value : true;
-                  const matchesLocation = selectedLocation.value ? result.location_name === selectedLocation.value : true;
-                  const matchesProperty = selectedProperty.value ? result.property_name === selectedProperty.value : true;
-  
-                  return matchesRegion && matchesSubregion && matchesLocation && matchesProperty;
-              });
-  
+          // Set filtered results based on selected criteria
+          filteredResultsLP.value = filteredProperties;
               if (filteredResultsLP.value.length === 0) {
                   searchStatus.value = "No properties found";
               } else if (filteredResultsLP.value.length === 1) {
@@ -250,15 +279,6 @@ createApp({
       return ""; 
     });   
 
-
-    const extractRegion = (input) => {
-      if (!input) return ""; 
-    
-      const parts = input.split(" / ").map(part => part.trim()); 
-      if (parts.length < 2) return ""; 
-    
-      return parts[parts.length - 2];
-    };
     
 
     // Function to generate star images based on the property rating
@@ -298,11 +318,6 @@ createApp({
       isListVisible.value = false; // Close the list
     };
   
-
-    const getTrimmedDestination = (input) => {
-        return input.split(' / ')[0];
-    };
-
     const updateRooms = () => {
       const newRooms = []; // Create a new array to hold the updated room data
       for (let i = 0; i < roomsCount.value; i++) {
@@ -336,9 +351,6 @@ createApp({
       rooms.value = newRooms;     
   };
   
-  
-  
-
     const getOrdinalSuffix = (number) => {
       const j = number % 10;
       const k = number % 100;
@@ -362,20 +374,7 @@ createApp({
     };
          
     const applyFilters = () => {
-      console.log("Applying Filters...");
-      console.log("Selected Ratings:", selectedRatings.value);
-      console.log("Selected Types:", selectedTypes.value);
-      console.log("Selected Availability:", selectedAvailable.value);
-      console.log("Selected Board:", selectedBoard.value);
-      console.log("Selected Price Range:", selectedPrice);
-  
-    //   // Ensure min is not greater than max
-    //   if (selectedPrice.min >= selectedPrice.max) {
-    //     console.warn("Min price is greater than or equal to max price. Adjusting values.");
-    //     selectedPrice.min = Math.min(selectedPrice.max - 1, priceRange.max - 1);
-    //     selectedPrice.max = Math.max(selectedPrice.min + 1, priceRange.min + 1);
-    // }
-  
+      
       // Reset to context if no filters are selected
       if (
           selectedRatings.value.length === 0 &&
@@ -452,11 +451,17 @@ createApp({
       updateSearchStatus();
   };
   
-  
-  
-  
-        
-         
+    const resetFilters = () => {
+      console.log("Resetting filters to default values...");
+      selectedRatings.value = []; // Reset selected ratings
+      selectedTypes.value = []; // Reset selected accommodation types
+      selectedAvailable.value = []; // Reset selected availability
+      selectedBoard.value = []; // Reset selected board types
+      selectedPrice.min = priceRange.min; // Reset price range to default
+      selectedPrice.max = priceRange.max; // Reset price range to default
+      filteredResultsLP.value = []; // Clear any previously filtered results
+   };
+                
     const updateSearchStatus = () => {
         if (filteredResultsLP.value.length === 0) {
             searchStatus.value = "No properties found";
@@ -466,9 +471,10 @@ createApp({
             searchStatus.value = `${filteredResultsLP.value.length} properties found`;
         }
     };
-      
-        
-          
+             
+    const showDatepicker = (event) => {
+      event.target.showPicker?.();       
+    };      
 
 
     return {
@@ -503,7 +509,8 @@ createApp({
       boardTypes,
       getOrdinalSuffix,
       priceRange,
-      selectedPrice
+      selectedPrice,
+      showDatepicker
 
     };
   },
