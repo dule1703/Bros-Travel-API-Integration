@@ -11,6 +11,7 @@
                 placeholder="Typing destination..."
                 @focus="showList"
                 @blur="hideList"
+                required
             />
             <ul class="select-list" v-if="isListVisible && searchResults.length > 0">
                 <li
@@ -25,10 +26,16 @@
         </div>
 
         <div class="row-wrapper">
-            <div class="input-wrapper ">
-                <span class="input-label">Check-in</span>
-                <input v-model="checkinDate" class="padding-style" type="date" placeholder="dd-mm-yyyy"  @focus="showDatepicker">
-            </div>
+           <div class="input-wrapper">
+    <span class="input-label">Check-in</span>
+    <input
+  v-model="checkinDate"
+  type="date"
+  :min="formattedCurrentDate"
+  required
+  @click="openDatepicker"
+/>
+</div>
             <div class="input-wrapper ">
                 <span class="input-label ">Nights</span>
                 <select class="padding-style" v-model="nightsCount">
@@ -236,16 +243,23 @@
                                     <th>Dostupnost</th>
                                     <th>Max osoba</th>
                                     <th>Pansion</th>
-                                    <th>Cena (€)</th>
+                                    <th>Cena</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr v-for="(room, roomIndex) in result.rooms" :key="roomIndex">
                                     <td data-label="Tip sobe">{{ room.type }}</td>
-                                    <td data-label="Dostupnost">{{ room.available }}</td>
+                                    <td data-label="Dostupnost">
+                                        <span v-html="renderRoomDetails(room).specialOffersHTML"></span>
+                                        <span :class="getAvailabilityClass(room.available)">
+                                            {{ getAvailabilityLabel(room.available) }}
+                                        </span>
+                                    </td>
                                     <td data-label="Max osoba">{{ room.max }}</td>
                                     <td data-label="Pansion">{{ room.board }}</td>
-                                    <td data-label="Cena (€)">{{ room.price }}</td>
+                                    <td data-label="Cena">
+                                        <span v-html="renderRoomDetails(room).priceHTML"></span>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Bros Travel API integration
  * Description: A plugin for integrating with the Bros Travel API
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: Duško Drljača
  */
 
@@ -72,80 +72,94 @@ add_shortcode('bros_travel_search', 'bros_travel_search_shortcode');
 
 
 
-/**
- * Shortcode to display recommendations (properties)
- */
-// function bros_travel_display_recommendations_shortcode() {
-//     // Initialize the Recommendations API class
-//     $recommendations_api = new Bros_Travel_API_Recommendations();
+// Add Bros Travel API settings page to the admin menu
+function bros_travel_add_admin_menu() {
+    add_menu_page(
+        'Bros Travel API Settings', // Page title
+        'Bros Travel API', // Menu title
+        'manage_options', // Capability
+        'bros-travel-api', // Menu slug
+        'bros_travel_render_settings_page', // Callback function
+        'dashicons-admin-generic', // Icon (optional)
+        100 // Position in the menu (optional)
+    );
+}
+add_action('admin_menu', 'bros_travel_add_admin_menu');
 
-//     // Get the recommendations (this will return an array of recommendations or an error message)
-//     $recommendations = $recommendations_api->get_recommendations();
+// Render the settings page
+function bros_travel_render_settings_page() {
+    ?>
+    <div class="wrap">
+        <h1>Bros Travel API Settings</h1>
+        <form method="post" action="options.php">
+            <?php
+            settings_fields('bros_travel_api_settings'); // Settings group name
+            do_settings_sections('bros-travel-api'); // Page slug
+            submit_button();
+            ?>
+        </form>
+    </div>
+    <?php
+}
 
-//     // Check if we received a valid response and the result contains properties
-//     if (isset($recommendations['result']['properties']) && is_array($recommendations['result']['properties'])) {
-//         // Prepare the output to display recommendations
-//         $output = '<div class="bros-recommendations">';
-//         $output .= '<h3>Recommended Properties</h3>';
-//         $output .= '<ul>';
+// Register settings and fields
+function bros_travel_register_settings() {
+    // Register the settings group
+    register_setting('bros_travel_api_settings', 'bros_travel_api_url');
+    register_setting('bros_travel_api_settings', 'bros_travel_api_username');
+    register_setting('bros_travel_api_settings', 'bros_travel_api_password');
 
-//         // Loop through each property and display its name and rating
-//         foreach ($recommendations['result']['properties'] as $property) {
-//             // Assuming each property has a 'name' and 'rating'; adjust as necessary
-//             $output .= '<li>';
-//             $output .= '<strong>' . esc_html($property['name']) . '</strong><br>';
-//             $output .= 'Rating: ' . esc_html($property['rating']) . '<br>';
-//             $output .= '</li>';
-//         }
+    // Add the settings section
+    add_settings_section(
+        'bros_travel_api_section', // Section ID
+        'API Credentials', // Section title
+        null, // Callback function (optional)
+        'bros-travel-api' // Page slug
+    );
 
-//         $output .= '</ul>';
-//         $output .= '</div>';
+    // Add settings fields
+    add_settings_field(
+        'bros_travel_api_url', // Field ID
+        'API URL', // Field title
+        'bros_travel_render_input_field', // Callback function
+        'bros-travel-api', // Page slug
+        'bros_travel_api_section', // Section ID
+        ['label_for' => 'bros_travel_api_url', 'type' => 'text'] // Custom args
+    );
 
-//         return $output;
-//     } else {
-//         // If no recommendations are available or there's an error fetching them, display a message
-//         return '<div class="bros-recommendations-error">No recommendations found or there was an error fetching them.</div>';
-//     }
-// }
+    add_settings_field(
+        'bros_travel_api_username',
+        'Username',
+        'bros_travel_render_input_field',
+        'bros-travel-api',
+        'bros_travel_api_section',
+        ['label_for' => 'bros_travel_api_username', 'type' => 'text']
+    );
 
-// function bros_travel_display_properties_shortcode() {
-//     // Initialize the Recommendations API class
-//     $properties_api = new Bros_Travel_API_Properties();
+    add_settings_field(
+        'bros_travel_api_password',
+        'Password',
+        'bros_travel_render_input_field',
+        'bros-travel-api',
+        'bros_travel_api_section',
+        ['label_for' => 'bros_travel_api_password', 'type' => 'password']
+    );
+}
+add_action('admin_init', 'bros_travel_register_settings');
 
-//     // Get the properties (this will return an array of properties or an error message)
-//     $properties = $properties_api->get_properties();
-
-//     // Check if we received a valid response and the result contains properties
-//     if (isset($properties['result']) && is_array($properties['result'])) {
-//         // Prepare the output to display properties
-//         $output = '<div class="bros-properties">';
-//         $output .= '<h3>Properties</h3>';
-//         $output .= '<ul>';
-
-//         // Loop through each property and display relevant information
-//         foreach ($properties['result'] as $property) {
-//             // Check if property has required fields
-//             if (isset($property['name'], $property['rating'], $property['image'], $property['description'])) {
-//                 $output .= '<li class="property-item">';
-//                 $output .= '<img src="' . esc_url($property['image']) . '" alt="' . esc_attr($property['name']) . '" class="property-image"><br>';
-//                 $output .= '<strong>' . esc_html($property['name']) . '</strong><br>';
-//                 $output .= 'Rating: ' . esc_html($property['rating']) . '<br>';
-//                 $output .= '<p>' . esc_html($property['description']) . '</p>';
-//                 $output .= '</li>';
-//             }
-//         }
-
-//         $output .= '</ul>';
-//         $output .= '</div>';
-
-//         return $output;
-//     } else {
-//         // If no properties are available or there's an error fetching them, display a message
-//         return '<div class="bros-properties-error">No properties found or there was an error fetching them.</div>';
-//     }
-// }
+// Callback to render input fields
+function bros_travel_render_input_field($args) {
+    $option = get_option($args['label_for']);
+    $type = $args['type'] ?? 'text'; // Default to text input
+    ?>
+    <input
+        type="<?php echo esc_attr($type); ?>"
+        id="<?php echo esc_attr($args['label_for']); ?>"
+        name="<?php echo esc_attr($args['label_for']); ?>"
+        value="<?php echo esc_attr($option); ?>"
+        class="regular-text"
+    />
+    <?php
+}
 
 
-// // Register the shortcode
-// add_shortcode('bros_travel_recommendations', 'bros_travel_display_recommendations_shortcode');
-// add_shortcode('bros_travel_properties', 'bros_travel_display_properties_shortcode');

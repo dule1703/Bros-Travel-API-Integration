@@ -31,7 +31,7 @@ createApp({
       { label: "Hotel", value: "hotel" },
       { label: "Luxury villa", value: "villa" },
       { label: "Private accommodation", value: "private" },
-    ]);
+    ]);    
     const availableTypes = ref([
       { label: "Available", value: "available" },
       { label: "On request", value: "on_request" },
@@ -44,17 +44,18 @@ createApp({
       { label: "HB", value: "HB" },
       { label: "RR", value: "RR" },
       { label: "UAI", value: "UAI" }      
-    ]);
+    ]);   
    
-    // Define reactive variables for selected filters
     const selectedRegion = ref(null);
     const selectedSubregion = ref(null);
     const selectedLocation = ref(null);
     const selectedProperty = ref(null);
 
+
+
     /***FUNCTIONS***/
     // Function to handle the destination search
-    
+
     const searchDestinations = () => {
       if (searchQuery.value.length >= 2) {
         const filteredResults = destinations.filter((destination) => {
@@ -103,8 +104,7 @@ createApp({
           throw new Error("Empty response body");
         }
     
-        const data = JSON.parse(text);
-        console.log("Parsed data:", data);
+        const data = JSON.parse(text);        
     
         if (data.success && data.data) {
           const locationsArray = Object.values(data.data);
@@ -154,22 +154,14 @@ createApp({
         selectedSubregion.value = extractPart(searchQuery.value, -3);
         selectedLocation.value = extractPart(searchQuery.value, -4);
         selectedProperty.value = extractPart(searchQuery.value, -5);
-
-        console.log("Extracted Property:", selectedProperty.value);
-        console.log("Extracted Location:", selectedLocation.value);
-        console.log("Extracted Subregion:", selectedSubregion.value);
-        console.log("Extracted Region:", selectedRegion.value);
+ 
 
 
           const roomsData = rooms.value.map((room) => ({
             adults: room.adults,
             children: room.childAges.filter((age) => age !== null), // Filter out `null` ages
          }));
-    
-        // Log the final formatted rooms data
-        console.log("Rooms Data to Send:", JSON.stringify(roomsData));         
-        
-  
+   
           const bodyParams = new URLSearchParams({
               action: "get_bros_travel_sa_properties",
               nonce: brosTravelData.nonce,
@@ -207,7 +199,13 @@ createApp({
                     available: room.available,
                     max: room.max,
                     board: room.board,
-                    price: room.price.toFixed(2),
+                    price:  room.price 
+                        ? (parseFloat(room.price) * 1.10).toFixed(2) 
+                        : "N/A", 
+                    initialPrice: room.initialPrice 
+                        ? (parseFloat(room.initialPrice) * 1.10).toFixed(2) 
+                        : null,
+                    specialOffers: room.specialOffers || []
                   })) || [],
               }));
 
@@ -267,9 +265,6 @@ createApp({
       }
     };
   
-  
-    
-
     const formattedCheckinDate = computed(() => {
       if (!checkinDate.value) return ""; 
       const date = new Date(checkinDate.value);
@@ -280,7 +275,6 @@ createApp({
     });   
 
     
-
     // Function to generate star images based on the property rating
     const generateStars = (rating) => {
         const starSrc = "/wp-content/plugins/bros-travel-plugin/assets/images/full-star.svg"; // Path to star image
@@ -313,8 +307,7 @@ createApp({
     };
 
     const selectDestination = (result) => {
-      searchQuery.value = result; // Set the selected destination in the input
-      console.log("Selected destination:", searchQuery.value);
+      searchQuery.value = result; // Set the selected destination in the input     
       isListVisible.value = false; // Close the list
     };
   
@@ -373,70 +366,68 @@ createApp({
         }
     };
          
-    const applyFilters = () => {
-      
-      // Reset to context if no filters are selected
-      if (
-          selectedRatings.value.length === 0 &&
-          selectedTypes.value.length === 0 &&
-          selectedAvailable.value.length === 0 &&
-          selectedBoard.value.length === 0 &&
-          selectedPrice.min === priceRange.min &&
-          selectedPrice.max === priceRange.max
-      ) {
-          console.log("No filters selected. Resetting to search context.");
-          filteredResultsLP.value = searchResultsLP.value.filter((result) => {
-              const matchesRegion = selectedRegion.value ? result.region === selectedRegion.value : true;
-              const matchesSubregion = selectedSubregion.value ? result.subregion === selectedSubregion.value : true;
-              const matchesLocation = selectedLocation.value ? result.location_name === selectedLocation.value : true;
-              const matchesProperty = selectedProperty.value ? result.property_name === selectedProperty.value : true;
+    const applyFilters = () => {     
   
-              return matchesRegion && matchesSubregion && matchesLocation && matchesProperty;
-          });
-          updateSearchStatus();
-          return;
-      }
-  
-      // Apply filtering logic
       filteredResultsLP.value = searchResultsLP.value
           .map((property) => {
-              // Filter rooms within each property
-              const filteredRooms = property.rooms.filter((room) => {
-                  const roomPrice = parseFloat(room.price);
-                  const matchesPrice = roomPrice >= (selectedPrice.min || 0) && roomPrice <= (selectedPrice.max || 0);
-                  const matchesAvailability = selectedAvailable.value.length > 0
-                      ? selectedAvailable.value.includes(room.available)
-                      : true;
-                  const matchesBoard = selectedBoard.value.length > 0
-                      ? selectedBoard.value.includes(room.board)
-                      : true;
-                  return matchesPrice && matchesAvailability && matchesBoard ;
-              });
+              const filteredRooms = property.rooms.filter((room) => {                 
   
-              // Include property only if it has matching rooms
+                  const roomPrice = parseFloat(room.price);
+                  const matchesPrice =
+                      roomPrice >= (selectedPrice.min || 0) &&
+                      roomPrice <= (selectedPrice.max || 0);
+  
+                  const matchesAvailability =
+                      selectedAvailable.value.length > 0
+                          ? selectedAvailable.value.includes("available")
+                              ? typeof room.available === "number" && room.available > 0
+                              : selectedAvailable.value.includes(room.available)
+                          : true;
+  
+                  const matchesBoard =
+                      selectedBoard.value.length > 0
+                          ? selectedBoard.value.includes(room.board)
+                          : true;
+  
+                  return matchesPrice && matchesAvailability && matchesBoard;
+              });  
+           
+  
               if (filteredRooms.length > 0) {
                   return {
                       ...property,
-                      rooms: filteredRooms, // Keep only filtered rooms
+                      rooms: filteredRooms,
                   };
               }
-              return null; // Exclude property if no rooms match
+              return null;
           })
-          .filter((property) => property !== null) // Remove properties with no matching rooms
+          .filter((property) => property !== null)
           .filter((property) => {
-              // Additional property-level filters
-              const matchesRating = selectedRatings.value.length > 0
-                  ? selectedRatings.value.includes(property.property_rating)
+              const matchesRating =
+                  selectedRatings.value.length > 0
+                      ? selectedRatings.value.includes(property.property_rating)
+                      : true;
+  
+              const matchesType =
+                  selectedTypes.value.length > 0
+                      ? selectedTypes.value.includes(property.type?.toLowerCase())
+                      : true;
+  
+              const matchesRegion = selectedRegion.value
+                  ? property.region === selectedRegion.value
                   : true;
   
-              const matchesType = selectedTypes.value.length > 0
-                  ? selectedTypes.value.includes(property.type?.toLowerCase())
+              const matchesSubregion = selectedSubregion.value
+                  ? property.subregion === selectedSubregion.value
                   : true;
   
-              const matchesRegion = selectedRegion.value ? property.region === selectedRegion.value : true;
-              const matchesSubregion = selectedSubregion.value ? property.subregion === selectedSubregion.value : true;
-              const matchesLocation = selectedLocation.value ? property.location_name === selectedLocation.value : true;
-              const matchesProperty = selectedProperty.value ? property.property_name === selectedProperty.value : true;
+              const matchesLocation = selectedLocation.value
+                  ? property.location_name === selectedLocation.value
+                  : true;
+  
+              const matchesProperty = selectedProperty.value
+                  ? property.property_name === selectedProperty.value
+                  : true;
   
               return (
                   matchesRating &&
@@ -446,13 +437,15 @@ createApp({
                   matchesLocation &&
                   matchesProperty
               );
-          });
-  
+          });  
+
       updateSearchStatus();
   };
   
-    const resetFilters = () => {
-      console.log("Resetting filters to default values...");
+  
+  
+  
+    const resetFilters = () => {     
       selectedRatings.value = []; // Reset selected ratings
       selectedTypes.value = []; // Reset selected accommodation types
       selectedAvailable.value = []; // Reset selected availability
@@ -474,7 +467,94 @@ createApp({
              
     const showDatepicker = (event) => {
       event.target.showPicker?.();       
-    };      
+    };    
+    
+    const getAvailabilityClass = (status) => {
+      switch (true) {
+        case status === "stop_sale":
+          return "availability-badge stop-sale-badge";
+        case status === "on_request":
+          return "availability-badge on-request-badge";
+        case typeof status === "number" && status > 0:
+          return "availability-badge available-badge";
+        default:
+          return "availability-badge"; // Default class
+      }
+    };
+    
+    const getAvailabilityLabel = (status) => {
+      switch (true) {
+        case status === "stop_sale":
+          return "Stop Sale";
+        case status === "on_request":
+          return "On Request";
+        case typeof status === "number" && status > 0:
+          return "Available";
+        default:
+          return "Unknown"; // Fallback for unexpected values
+      }
+    };
+    
+    const renderRoomDetails = (room) => {
+      // Initialize special offers HTML
+      let specialOffersHTML = "";
+  
+      // Render special offers if available
+      if (room.specialOffers && Array.isArray(room.specialOffers) && room.specialOffers.length > 0) {
+          specialOffersHTML = room.specialOffers
+              .map(
+                  (offer) =>
+                      `<span class="offer-badge">
+                          ${offer.title}
+                      </span>`
+              )
+              .join(""); // Join all offers into a single string
+      }
+  
+      // Initialize price HTML
+      let priceHTML = "";
+  
+      // Render initial price if available
+      if (room.initialPrice && !isNaN(parseFloat(room.initialPrice))) {
+          priceHTML += `<span class="initial-price">
+              ${parseFloat(room.initialPrice).toFixed(2)} €
+          </span>`;
+      }
+  
+      // Render final price
+      const price = parseFloat(room.price); // Ensure price is a number
+      if (!isNaN(price)) {
+          priceHTML += `<span class="final-price">
+              ${price.toFixed(2)} €
+          </span>`;
+      } else {
+          priceHTML += `<span class="final-price">
+              N/A €
+          </span>`;
+      }
+    
+      // Return both HTML parts as an object
+      return {
+          specialOffersHTML,
+          priceHTML,
+      };
+  };
+  
+    
+    const formattedCurrentDate = computed(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`; // Format YYYY-MM-DD
+});
+
+   const openDatepicker = (event) => {
+      if (event.target.showPicker) {
+        event.target.showPicker();
+      }
+    };
+   
 
 
     return {
@@ -510,8 +590,12 @@ createApp({
       getOrdinalSuffix,
       priceRange,
       selectedPrice,
-      showDatepicker
-
+      showDatepicker,
+      getAvailabilityClass,
+      getAvailabilityLabel,
+      renderRoomDetails,
+      formattedCurrentDate, 
+      openDatepicker
     };
   },
 }).mount("#brosSearchApp");

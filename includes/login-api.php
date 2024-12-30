@@ -3,13 +3,25 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+
+
 class Bros_Travel_API_Login {
-    private $api_url = 'https://testservices.bros-travel.com';
-    private $username = 'test_bros';
-    private $password = 'brostest';
+    private $api_url;
+    private $username;
+    private $password;
     private $token = null;
 
     public function __construct() {
+        $this->api_url = get_option('bros_travel_api_url', '');
+        $this->username = get_option('bros_travel_api_username', '');
+        $this->password = get_option('bros_travel_api_password', '');
+     
+
+        // Validate credentials
+        if (empty($this->api_url) || empty($this->username) || empty($this->password)) {
+            error_log('API credentials are missing. Please configure them in the settings.');
+            return;
+        }
         $this->login();
     }
 
@@ -61,7 +73,7 @@ class Bros_Travel_API_Login {
             echo 'No valid token available for API request.<br>';
             return;
         }
-
+error_log('Making API request to URL: ' . $this->api_url);
         $ch = curl_init($this->api_url);
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -84,7 +96,7 @@ class Bros_Travel_API_Login {
             curl_close($ch);
             return;
         }
-
+error_log('API Response: ' . $response);
         curl_close($ch);
 
         // Decode the response

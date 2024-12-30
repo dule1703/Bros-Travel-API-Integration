@@ -12,7 +12,8 @@ class Bros_Travel_API_Locations extends Bros_Travel_API_Base {
         if (!$this->validate_token()) {
             return;
         }
-
+     // Use $this->api_url inherited from the base class
+        error_log('API URL in Properties Class: ' . $this->api_url);
         // Prepare the request
         $ch = curl_init($this->api_url);
         curl_setopt($ch, CURLOPT_POST, 1);
