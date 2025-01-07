@@ -200,10 +200,10 @@ createApp({
                     max: room.max,
                     board: room.board,
                     price:  room.price 
-                        ? (parseFloat(room.price) * 1.10).toFixed(2) 
+                        ? (parseFloat(room.price) * 1.11).toFixed(2) 
                         : "N/A", 
                     initialPrice: room.initialPrice 
-                        ? (parseFloat(room.initialPrice) * 1.10).toFixed(2) 
+                        ? (parseFloat(room.initialPrice) * 1.11).toFixed(2) 
                         : null,
                     specialOffers: room.specialOffers || []
                   })) || [],
