@@ -14,7 +14,7 @@ createApp({
     const checkinDate = ref("");
     const nightsCount = ref(10);
     const isLoading = ref(false);
-    const searchStatus = ref("Search Results");
+    const searchStatus = ref("Rezultati pretrage");
     const showFilters = ref(false);
     const filteredResultsLP = ref([]);
     const selectedRatings = ref([]);
@@ -29,13 +29,13 @@ createApp({
     ]);
     const accommodationTypes = ref([
       { label: "Hotel", value: "hotel" },
-      { label: "Luxury villa", value: "villa" },
-      { label: "Private accommodation", value: "private" },
+      { label: "Luksuzna vila", value: "villa" },
+      { label: "Privatni smeštaj", value: "private" },
     ]);    
     const availableTypes = ref([
-      { label: "Available", value: "available" },
-      { label: "On request", value: "on_request" },
-      { label: "Stop sale", value: "stop_sale" },
+      { label: "Dostupno", value: "available" },
+      { label: "Na upit", value: "on_request" },
+      { label: "Nije dostupno za izdavanje", value: "stop_sale" },
     ]);
     const boardTypes = ref([
       { label: "AI", value: "AI" },
@@ -137,7 +137,7 @@ createApp({
         searchResultsLP.value = []; // Clear previous search results
         filteredResultsLP.value = []; // Clear previous filtered results     
         isLoading.value = true;
-        searchStatus.value = "Searching data...";
+        searchStatus.value = "Pretraga podataka...";
         resetFilters();
 
         try {
@@ -201,9 +201,9 @@ createApp({
                     board: room.board,
                     price:  room.price 
                         ? (parseFloat(room.price) * 1.11).toFixed(2) 
-                        : "N/A", 
+                        : "N/A",
                     initialPrice: room.initialPrice 
-                        ? (parseFloat(room.initialPrice) * 1.11).toFixed(2) 
+                        ? (parseFloat(room.initialPrice) * 1.11).toFixed(2)
                         : null,
                     specialOffers: room.specialOffers || []
                   })) || [],
@@ -244,16 +244,16 @@ createApp({
           // Set filtered results based on selected criteria
           filteredResultsLP.value = filteredProperties;
               if (filteredResultsLP.value.length === 0) {
-                  searchStatus.value = "No properties found";
+                  searchStatus.value = "Nema dostupnih objekata";
               } else if (filteredResultsLP.value.length === 1) {
-                  searchStatus.value = "1 property found";
+                  searchStatus.value = "1 objekat pronađen";
               } else {
-                  searchStatus.value = `${filteredResultsLP.value.length} properties found`;
+                  searchStatus.value = `Broj pronađenih objekata: ${filteredResultsLP.value.length}`;
               }
           } else {
               searchResultsLP.value = [];
               filteredResultsLP.value = [];
-              searchStatus.value = "No properties found";
+              searchStatus.value = "Nema dostupnih objekata";
           }
       } catch (error) {
           console.error("Error during search:", error);
@@ -377,13 +377,15 @@ createApp({
                       roomPrice >= (selectedPrice.min || 0) &&
                       roomPrice <= (selectedPrice.max || 0);
   
-                  const matchesAvailability =
-                      selectedAvailable.value.length > 0
-                          ? selectedAvailable.value.includes("available")
-                              ? typeof room.available === "number" && room.available > 0
-                              : selectedAvailable.value.includes(room.available)
-                          : true;
-  
+                  const matchesAvailability = selectedAvailable.value.length > 0
+                  ? selectedAvailable.value.some((availability) => {
+                        if (availability === "available") {
+                            return typeof room.available === "number" && room.available > 0;
+                        }
+                        return room.available === availability;
+                    })
+                  : true;
+                  
                   const matchesBoard =
                       selectedBoard.value.length > 0
                           ? selectedBoard.value.includes(room.board)
@@ -457,11 +459,11 @@ createApp({
                 
     const updateSearchStatus = () => {
         if (filteredResultsLP.value.length === 0) {
-            searchStatus.value = "No properties found";
+            searchStatus.value = "Nema dostupnih objekata";
         } else if (filteredResultsLP.value.length === 1) {
-            searchStatus.value = "1 property found";
+            searchStatus.value = "1 objekat pronađen";
         } else {
-            searchStatus.value = `${filteredResultsLP.value.length} properties found`;
+            searchStatus.value = `Broj pronađenih objekata: ${filteredResultsLP.value.length}`;
         }
     };
              

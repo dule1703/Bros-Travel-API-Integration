@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Bros Travel API integration
  * Description: A plugin for integrating with the Bros Travel API
- * Version: 1.0.1
+ * Version: 1.0.2
  * Author: Duško Drljača
  */
 
@@ -23,7 +23,7 @@ require_once BROS_TRAVEL_PLUGIN_DIR . 'includes/init.php';
  */
 function bros_travel_enqueue_scripts() {
     // Load Vue.js from CDN as a module
-    wp_enqueue_script('vue-js', 'https://unpkg.com/vue@3/dist/vue.global.js', array(), null, true);
+    wp_enqueue_script('vue-js', 'https://unpkg.com/vue@3/dist/vue.global.prod.js', array(), null, true);
     
     // Enqueue the main JavaScript file as a module
     wp_enqueue_script('main-bros', plugins_url('assets/js/main-bros.js', __FILE__), array('jquery'), '1.0.0', true);

@@ -3,12 +3,12 @@
     <!-- First column -->
     <div class="search-column first-column">
         <div class="input-wrapper">
-            <span class="input-label">Destination</span>
+            <span class="input-label">Destinacija</span>
             <input
                 id="inputSearch"
                 v-model="searchQuery"
                 type="text"
-                placeholder="Typing destination..."
+                placeholder="Unesite destinaciju..."
                 @focus="showList"
                 @blur="hideList"
                 required
@@ -27,7 +27,7 @@
 
         <div class="row-wrapper">
            <div class="input-wrapper">
-    <span class="input-label">Check-in</span>
+    <span class="input-label">Datum prijave</span>
     <input
   v-model="checkinDate"
   type="date"
@@ -37,7 +37,7 @@
 />
 </div>
             <div class="input-wrapper ">
-                <span class="input-label ">Nights</span>
+                <span class="input-label ">Broj noćenja</span>
                 <select class="padding-style" v-model="nightsCount">
                     <option v-for="n in 60" :key="n" :value="n">{{ n }}</option>
                 </select>
@@ -49,7 +49,7 @@
 <div class="search-column second-column">
     <!-- Rooms selector -->
     <div class="input-wrapper">
-        <span class="input-label">Rooms</span>
+        <span class="input-label">Broj soba</span>
         <select v-model="roomsCount" @change="updateRooms">
             <option v-for="r in 10" :key="r" :value="r">{{ r }}</option>
         </select>
@@ -58,11 +58,11 @@
     <!-- Dynamic rows for each room -->
     <div v-for="(room, index) in rooms" :key="index" class="room-wrapper">
         <div class="row-wrapper">
-            <span class="input-label room-span">ROOM {{ index + 1 }}</span>
+            <span class="input-label room-span">SOBA {{ index + 1 }}</span>
             
             <!-- Adults Input -->
             <div class="input-wrapper">
-                <span class="input-label">Adults</span>
+                <span class="input-label">Odrasli</span>
                 <select v-model="room.adults" class="border-style">
                     <option v-for="a in 10" :key="a" :value="a">{{ a }}</option>
                 </select>
@@ -70,7 +70,7 @@
             
             <!-- Children Input -->
             <div class="input-wrapper">
-                <span class="input-label">Children</span>
+                <span class="input-label">Deca</span>
                 <select v-model="room.children" class="border-style" @change="updateRooms">
                     <option :value="0" key="0">0</option>
                     <option v-for="c in 10" :key="c" :value="c">{{ c }}</option>
@@ -85,7 +85,7 @@
                     {{ childIndex + 1 }}{{ getOrdinalSuffix(childIndex + 1) }} child age:
                 </label>
                 <div class="child-age-wrapper">
-                    <span class="input-label">Age</span>
+                    <span class="input-label">Godine</span>
                     <select v-model="room.childAges[childIndex]" class="border-style">                       
                         <option v-for="ca in 17" :key="ca" :value="ca">{{ ca }}</option>
                     </select>
@@ -100,7 +100,7 @@
 
     <!-- Submit button -->
     <div class="button-row">
-        <button type="submit" class="search-form-btn">Search</button>
+        <button type="submit" class="search-form-btn">Pretražite</button>
     </div>
 </form>
 
@@ -108,14 +108,14 @@
         <!-- FILTERS section -->
         <div>
             <button class="filters-button" v-if="searchResultsLP.length > 0" @click="toggleFilters">
-                {{ showFilters ? 'Hide filters' : 'Show filters' }}
+                {{ showFilters ? 'Sakrijte filtere' : 'Prikažite filtere' }}
             </button>    
         </div>
         
         <div class="filters-wrapper" :style="{ display: showFilters ? 'block' : 'none' }">
             <div class="filters-row">
                 <div class="filter-section">
-                    <h5>Filter by rating</h5>
+                    <h5>Filter po rejtingu</h5>
                     <div class="rating-filters">
                         <label v-for="rating in [5, 4, 3, 2, 1]" :key="rating" class="rating-filter">
                             <input
@@ -129,7 +129,7 @@
                     </div>
                 </div>
                 <div class="filter-section">
-                    <h5>Filter by accomodation type</h5>
+                    <h5>Filter po tipu smeštaja</h5>
                     <div class="accomodation-filters">
                         <label v-for="type in accommodationTypes" :key="type.value" class="type-filter">
                             <input
@@ -143,7 +143,7 @@
                     </div>
                 </div>
                 <div class="filter-section">
-                    <h5>Filter by Availability</h5>
+                    <h5>Filter po dostupnosti</h5>
                     <div class="accomodation-filters">
                         <label v-for="type in availableTypes" :key="type.value" class="type-filter">
                             <input
@@ -157,7 +157,7 @@
                     </div>
                 </div>
                 <div class="filter-section">
-                    <h5>Filter by Board</h5>
+                    <h5>Filter po pansionu</h5>
                     <div class="accomodation-filters">
                         <label v-for="type in boardTypes" :key="type.value" class="type-filter">
                             <input
@@ -171,7 +171,7 @@
                     </div>
                 </div>
                 <div class="filter-section">
-                    <h5>Filter by Price</h5>
+                    <h5>Filter po ceni</h5>
                     <div class="price-slider">
                         <label class="price-label">Min: {{ selectedPrice.min }} €</label>
                         <input

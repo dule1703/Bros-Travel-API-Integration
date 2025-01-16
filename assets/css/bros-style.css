@@ -1,5 +1,5 @@
 .bros-search-app {
-  background: radial-gradient(circle, #d0e4ff, #a8d8ff, #6cb6ff) !important;
+  background: radial-gradient(circle, #d0e4ff, #a8d8ff, #6cb6ff);
   box-shadow: 0 12px 24px rgba(26, 78, 138, 0.9); 
   border-radius: 12px;
   padding: 30px;
@@ -433,13 +433,13 @@
   width: 100%;
   border-collapse: collapse;
   font-family: 'Poppins', sans-serif;
-  text-align: center;
+  text-align: left;
 }
 
 .rooms-table th {
   background-color: #014b8c;
   color: #ffffff !important;
-  padding: 10px;
+  padding: 9px 10px !important; 
   text-transform: uppercase;
   font-size: 14px;
 }
