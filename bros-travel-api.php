@@ -46,19 +46,19 @@ add_action('wp_enqueue_scripts', 'bros_travel_enqueue_scripts');
  */
 function bros_travel_enqueue_styles() {
     // Load plugin-specific CSS
-    wp_enqueue_style('bros-style', plugins_url('assets/css/bros-style.css', __FILE__));
+    wp_enqueue_style('bros-style', plugins_url('assets/css/bros-style.css', __FILE__), array(), '1.0.0');
 }
 add_action('wp_enqueue_scripts', 'bros_travel_enqueue_styles');
 
 /**
  * Add nonce for security
- */
+ 
 function bros_travel_nonce() {
     $nonce = wp_create_nonce('bros-travel-nonce');
     wp_add_inline_script('main-bros', "var brosTravelNonce = '" . esc_js($nonce) . "';", 'before');
 }
 
-add_action('wp_enqueue_scripts', 'bros_travel_nonce');
+add_action('wp_enqueue_scripts', 'bros_travel_nonce');*/
 
 /**
  * Shortcode to display search form

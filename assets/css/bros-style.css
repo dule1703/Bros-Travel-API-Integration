@@ -522,12 +522,19 @@
   font-weight: bold;
 }
 
+.room-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  align-items: center;
+}
+
 /* General availability badge */
 .availability-badge {
   display: inline-block;
-  padding: 5px 10px;
+  padding: 5px 6px;
   border-radius: 5px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: bold;
   color: #ffffff;
   text-align: center;
@@ -557,6 +564,27 @@
   border-radius: 3px;
   font-size: 12px;
 }
+
+.non-refundable-badge {
+  background-color: #e74c3c; /* crvena */
+  color: white;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-left: 4px;
+  display: inline-block;
+}
+
+.terms-badge {
+  background-color: #bdc3c7; /* siva */
+  color: #333;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-left: 4px;
+  display: inline-block;
+}
+
 
 /* Price styles */
 .initial-price,

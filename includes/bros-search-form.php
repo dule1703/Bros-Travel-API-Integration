@@ -250,10 +250,14 @@
                                 <tr v-for="(room, roomIndex) in result.rooms" :key="roomIndex">
                                     <td data-label="Tip sobe">{{ room.type }}</td>
                                     <td data-label="Dostupnost">
-                                        <span v-html="renderRoomDetails(room).specialOffersHTML"></span>
-                                        <span :class="getAvailabilityClass(room.available)">
-                                            {{ getAvailabilityLabel(room.available) }}
-                                        </span>
+                                        <div class="room-badges">
+                                            <span v-html="renderRoomDetails(room).nonRefundableHTML"></span>
+                                            <span v-html="renderRoomDetails(room).termsHTML"></span>
+                                            <span v-html="renderRoomDetails(room).specialOffersHTML"></span>
+                                            <span :class="getAvailabilityClass(room.available)">
+                                                {{ getAvailabilityLabel(room.available) }}
+                                            </span>
+                                        </div>
                                     </td>
                                     <td data-label="Max osoba">{{ room.max }}</td>
                                     <td data-label="Pansion">{{ room.board }}</td>
